@@ -3,7 +3,7 @@ import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty({ message: 'Username is a required field' })
-  username: string;
+  fullname: string;
 
   @IsString()
   @IsEmail({}, { message: 'Invalid email address' })
