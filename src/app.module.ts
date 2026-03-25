@@ -5,8 +5,18 @@ import { UsersModule } from './users/users.module';
 import { BcryptService } from './shared/securities/services/bcrypt.service';
 import { AuthModule } from './auth/auth.module';
 
+import { jwtConfigOptions } from './auth/config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from './config/config.module';
+
 @Module({
-  imports: [UsersModule, DatabaseModule, AuthModule],
+  imports: [
+    UsersModule,
+    DatabaseModule,
+    AuthModule,
+    ConfigModule,
+    JwtModule.registerAsync(jwtConfigOptions),
+  ],
   controllers: [],
   providers: [PrismaService, BcryptService],
 })

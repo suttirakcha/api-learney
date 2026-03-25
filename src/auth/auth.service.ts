@@ -4,23 +4,22 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-
-import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
 import { BcryptService } from '../shared/securities/services/bcrypt.service';
+import { AuthTokenService } from '../shared/securities/services/auth-token.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private readonly bcryptService: BcryptService,
+    private readonly tokenService: AuthTokenService, // ✅ เพิ่ม
   ) {}
 
   async register(body: RegisterDto) {
-    const { email, password } = body;
+    const { email, password, fullname } = body;
 
-    // ❗ เช็ค email ซ้ำ
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -29,26 +28,32 @@ export class AuthService {
       throw new BadRequestException('Email already exists');
     }
 
-    // 🔐 hash password
     const hashedPassword = await this.bcryptService.hash(password);
 
-    // ✅ create user
     const user = await this.prisma.user.create({
       data: {
-        ...body,
+        email,
+        fullname,
         password: hashedPassword,
       },
     });
 
-    // const { password, ...rest } = user แก้
-
-    // ❗ ไม่ส่ง password กลับ
-    return {
-      id: user.id,
-      fullname: user.fullname,
+    const token = await this.tokenService.sign({
+      sub: user.id,
       email: user.email,
+      role: user.role,
+    });
+
+    return {
+      user: {
+        id: user.id,
+        fullname: user.fullname,
+        email: user.email,
+      },
+      token,
     };
   }
+
   async login(dto: LoginDto) {
     const { email, password } = dto;
 
@@ -60,14 +65,21 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await this.bcryptService.compare(password, user.password);
 
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    const token = await this.tokenService.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
     return {
       message: 'Login success',
+      token,
       user: {
         id: user.id,
         fullname: user.fullname,
