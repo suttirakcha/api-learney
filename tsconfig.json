@@ -20,6 +20,10 @@
     "noImplicitAny": true,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "baseUrl": "./",
+    "paths": {
+      "src/*": ["src/*"]
+    }
   }
 }
