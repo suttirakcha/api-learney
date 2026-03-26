@@ -18,14 +18,17 @@ export class AuthService {
   ) {}
 
   async register(body: RegisterDto) {
-    const { email, password, fullname } = body;
+    const { email, password, fullname, role } = body;
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      throw new BadRequestException('Email already exists');
+      throw new BadRequestException({
+        message: 'Email already exists',
+        code: 'EMAIL_EXISTS',
+      });
     }
 
     const hashedPassword = await this.bcryptService.hash(password);
@@ -35,6 +38,7 @@ export class AuthService {
         email,
         fullname,
         password: hashedPassword,
+        role,
       },
     });
 
