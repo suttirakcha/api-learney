@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { jwtConfigOptions } from './auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from './config/config.module';
+import { LessonModule } from './lesson/lesson.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ConfigModule } from './config/config.module';
     AuthModule,
     ConfigModule,
     JwtModule.registerAsync(jwtConfigOptions),
+    LessonModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],
