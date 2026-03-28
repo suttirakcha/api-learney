@@ -1,3 +1,5 @@
+// src/shared/securities/jwt.config.ts
+
 import { JwtModuleAsyncOptions } from '@nestjs/jwt';
 import { TypedConfigService } from '../../config/typed-config.service';
 

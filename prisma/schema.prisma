@@ -8,18 +8,59 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+  INSTRUCTOR
+}
+
+enum Status {
+  DRAFT
+  PENDING
+  ACTIVE
+  CANCELLED
+}
+
 model User {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   fullname  String
-  email     String    @unique
+  email     String   @unique
   password  String
-  role      Role      @default(USER)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  carts     Cart?
-  Payment   Payment[]
-  profiles  Profile[]
-  courses   courses[]
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  carts    Cart[]
+  profiles Profile[]
+  courses  Course[]
+  payment  Payment[]
+}
+
+model Course {
+  id           String   @id @default(uuid())
+  courseName   String   @map("course_name")
+  category     String
+  description  String   @db.Text
+  thumbnail    String   @map("thumbnail_url")
+  videoPreview String?  @map("video_preview")
+  price        Decimal  @db.Decimal(10, 2)
+  discount     Decimal? @db.Decimal(10, 2)
+  tags         String[]
+  status       Status   @default(DRAFT)
+
+  averageRating Decimal? @map("average_rating") @db.Decimal(3, 2)
+  totalStudents Int      @default(0) @map("total_students")
+  totalLessons  Int      @default(0) @map("total_lessons")
+  totalDuration String?  @map("total_duration")
+
+  instructorId String   @map("instructor_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  instructor    User           @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  courseDetails CourseDetail[]
+  cartItems     CartItem[]
+  reviews       Review[]
 }
 
 model CourseDetail {
@@ -28,32 +69,39 @@ model CourseDetail {
   title     String
   content   String?
   order     Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  course    courses  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  coursesId String?
 }
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String     @unique
+  id        String   @id @default(uuid())
+  userId    String   @unique
   total     Decimal
   subtotal  Decimal
   discount  Decimal?
-  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
   user      User       @relation(fields: [userId], references: [id])
   cartItems CartItem[]
-  Payment   Payment?
+  payment   Payment?
 }
 
 model CartItem {
-  id       String  @id @default(uuid())
+  id       String @id @default(uuid())
   cartId   String
   courseId String
   // created_at DateTime @default(now()) @db.Timestamptz(6)
   // updated_at DateTime @db.Timestamptz(6)
-  cart     Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  course   courses @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  cart     Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  coursesId String?
 
   @@unique([cartId, courseId])
 }
@@ -65,10 +113,11 @@ model Payment {
   amount    Decimal  @db.Decimal(10, 2)
   status    Status   @default(PENDING)
   evidence  String?
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  Cart      Cart     @relation(fields: [cartId], references: [id])
-  User      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  cart Cart @relation(fields: [cartId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Profile {
@@ -86,42 +135,8 @@ model Review {
   courseId   String
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @db.Timestamptz(6)
-  courses    courses  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-}
 
-model courses {
-  id             String         @id
-  course_name    String
-  category       String
-  description    String
-  thumbnail_url  String
-  video_preview  String?
-  price          Decimal        @db.Decimal(10, 2)
-  discount       Decimal?       @db.Decimal(10, 2)
-  tags           String[]
-  status         Status         @default(DRAFT)
-  average_rating Decimal?       @db.Decimal(3, 2)
-  total_students Int            @default(0)
-  total_lessons  Int            @default(0)
-  total_duration String?
-  instructor_id  String
-  created_at     DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime       @db.Timestamptz(6)
-  cartItems      CartItem[]
-  courseDetails  CourseDetail[]
-  Review         Review[]
-  User           User           @relation(fields: [instructor_id], references: [id], onDelete: Cascade)
-}
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-enum Role {
-  USER
-  ADMIN
-  INSTRUCTOR
-}
-
-enum Status {
-  DRAFT
-  PENDING
-  ACTIVE
-  CANCELLED
+  coursesId String?
 }
