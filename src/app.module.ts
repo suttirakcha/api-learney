@@ -9,6 +9,7 @@ import { jwtConfigOptions } from './auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from './config/config.module';
 import { CartModule } from './cart/cart.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CartModule } from './cart/cart.module';
     ConfigModule,
     JwtModule.registerAsync(jwtConfigOptions),
     CartModule,
+    AdminModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],

@@ -1,3 +1,5 @@
+// src/auth/auth.service.ts
+
 import {
   Injectable,
   BadRequestException,
@@ -8,14 +10,35 @@ import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
 import { BcryptService } from '../shared/securities/services/bcrypt.service';
 import { AuthTokenService } from '../shared/securities/services/auth-token.service';
+import { JwtPayload } from '../types/jwt-payload.type';
+import { Role } from '../database/generated/prisma/enums';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private readonly bcryptService: BcryptService,
-    private readonly tokenService: AuthTokenService, // ✅ เพิ่ม
+    private readonly tokenService: AuthTokenService,
   ) {}
+
+  async generateTokens(user: { id: string; email: string; role: Role }) {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    // ✅ แยก access / refresh
+    const accessToken = await this.tokenService.sign(payload, {
+      expiresIn: '15m',
+    });
+
+    const refreshToken = await this.tokenService.sign(payload, {
+      expiresIn: '7d',
+    });
+
+    return { accessToken, refreshToken };
+  }
 
   async register(body: RegisterDto) {
     const { email, password, fullname, role } = body;
@@ -25,10 +48,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new BadRequestException({
-        message: 'Email already exists',
-        code: 'EMAIL_EXISTS',
-      });
+      throw new BadRequestException('Email already exists');
     }
 
     const hashedPassword = await this.bcryptService.hash(password);
@@ -42,19 +62,11 @@ export class AuthService {
       },
     });
 
-    const token = await this.tokenService.sign({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const tokens = await this.generateTokens(user);
 
     return {
-      user: {
-        id: user.id,
-        fullname: user.fullname,
-        email: user.email,
-      },
-      token,
+      user,
+      ...tokens,
     };
   }
 
@@ -75,20 +87,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const token = await this.tokenService.sign({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const tokens = await this.generateTokens(user);
 
     return {
-      message: 'Login success',
-      token,
-      user: {
-        id: user.id,
-        fullname: user.fullname,
-        email: user.email,
-      },
+      user,
+      ...tokens,
     };
   }
 }

@@ -10,7 +10,7 @@ import { Trim } from '../../common/decorators/trim.decorator';
 import { Match } from '../../common/validators/match.validator';
 
 export class RegisterDto {
-  @IsIn(['USER', 'INSTRUCTOR']) // ✅ สำคัญ
+  @IsIn(['USER', 'INSTRUCTOR'])
   role: 'USER' | 'INSTRUCTOR';
   @Trim()
   @IsString({ message: 'username must be a string' })
