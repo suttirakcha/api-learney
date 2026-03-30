@@ -50,4 +50,13 @@ export class AdminController {
   deleteCourse(@Param('id') id: string) {
     return this.adminService.deleteCourse(id);
   }
+  @Get('course-performance')
+  getCoursePerformance() {
+    return this.adminService.getCoursePerformance();
+  }
+
+  @Get('categories')
+  getCategories() {
+    return this.adminService.getCategoryStats();
+  }
 }

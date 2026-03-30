@@ -79,7 +79,7 @@ model CourseDetail {
 
 model Cart {
   id        String   @id @default(uuid())
-  userId    String   @unique
+  userId    String
   total     Decimal
   subtotal  Decimal
   discount  Decimal?
