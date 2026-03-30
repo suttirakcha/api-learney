@@ -1,26 +1,50 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCartDto } from './dto/create-cart.dto';
-import { UpdateCartDto } from './dto/update-cart.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
 export class CartService {
-  create(createCartDto: CreateCartDto) {
-    return 'This action adds a new cart';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async addItemToCart(userId: string, courseId: string) {
+    const cart = await this.prisma.cart.upsert({
+      where: { userId },
+      update: {},
+      create: { userId, total: 0, subtotal: 0 },
+    });
+
+    return this.prisma.cartItem.upsert({
+      where: {
+        cartId_courseId: {
+          cartId: cart.id,
+          courseId: courseId,
+        },
+      },
+      create: {
+        cartId: cart.id,
+        courseId: courseId,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all cart`;
-  }
+  async removeItemFromCart(userId: string, courseId: string) {
+    const cart = await this.prisma.cart.findFirst({
+      where: { userId },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} cart`;
-  }
+    if (!cart) {
+      throw new NotFoundException({
+        message: 'Cart is empty',
+        code: 'CART_EMPTY',
+      });
+    }
 
-  update(id: number, updateCartDto: UpdateCartDto) {
-    return `This action updates a #${id} cart`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} cart`;
+    return this.prisma.cartItem.delete({
+      where: {
+        cartId_courseId: {
+          cartId: cart.id,
+          courseId,
+        },
+      },
+    });
   }
 }
