@@ -10,6 +10,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from './config/config.module';
 import { CartModule } from './cart/cart.module';
 import { AdminModule } from './admin/admin.module';
+import { CourseModule } from './course/course.module';
+import { InstructorModule } from './instructor/instructor.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { AdminModule } from './admin/admin.module';
     JwtModule.registerAsync(jwtConfigOptions),
     CartModule,
     AdminModule,
+    CourseModule,
+    InstructorModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],
