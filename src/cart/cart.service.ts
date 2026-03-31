@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaClientKnownRequestError } from 'src/database/generated/prisma/internal/prismaNamespace';
 import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
@@ -12,18 +17,32 @@ export class CartService {
       create: { userId, total: 0, subtotal: 0 },
     });
 
-    return this.prisma.cartItem.upsert({
-      where: {
-        cartId_courseId: {
+    try {
+      return await this.prisma.cartItem.upsert({
+        where: {
+          cartItemIdentifier: {
+            cartId: cart.id,
+            courseId: courseId,
+          },
+        },
+        update: {},
+        create: {
           cartId: cart.id,
           courseId: courseId,
         },
-      },
-      create: {
-        cartId: cart.id,
-        courseId: courseId,
-      },
-    });
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException({
+          message: error.message,
+          code: error.code,
+        });
+      }
+      throw error;
+    }
   }
 
   async removeItemFromCart(userId: string, courseId: string) {
@@ -38,13 +57,26 @@ export class CartService {
       });
     }
 
-    return this.prisma.cartItem.delete({
-      where: {
-        cartId_courseId: {
-          cartId: cart.id,
-          courseId,
+    try {
+      return this.prisma.cartItem.delete({
+        where: {
+          cartItemIdentifier: {
+            cartId: cart.id,
+            courseId,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException({
+          message: error.message,
+          code: error.code,
+        });
+      }
+      throw error;
+    }
   }
 }

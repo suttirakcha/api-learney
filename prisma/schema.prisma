@@ -79,7 +79,7 @@ model CourseDetail {
 
 model Cart {
   id        String   @id @default(uuid())
-  userId    String
+  userId    String   @unique
   total     Decimal
   subtotal  Decimal
   discount  Decimal?
@@ -103,7 +103,7 @@ model CartItem {
 
   coursesId String?
 
-  @@unique([cartId, courseId])
+  @@unique([cartId, courseId], name: "cartItemIdentifier")
 }
 
 model Payment {
