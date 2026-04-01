@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider     = "prisma-client"
   output       = "../src/database/generated/prisma"
@@ -20,90 +15,133 @@ enum Role {
 }
 
 enum Status {
+  DRAFT
   PENDING
-  REJECT
-  APPROVE
+  ACTIVE
+  CANCELLED
 }
 
 enum LessonType {
   VIDEO
-  EXERCISE
   DOCS
 }
 
 model User {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   fullname  String
-  email     String    @unique
+  email     String   @unique
   password  String
-  role      Role      @default(USER)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
-  carts     Cart[]
-  profiles  Profile[]
+  role      Role     @default(USER)
+  phone     Int
+  image     String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  carts           Cart[]
+  courses         Course[]
+  payment         Payment[]
+  enrolledCourses EnrolledCourse[]
+}
+
+model EnrolledCourse {
+  id       String @id @default(uuid())
+  userId   String
+  courseId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Course {
-  id            String         @id @default(uuid())
-  category      String
-  courseName    String
-  video         String
-  description   String
-  price         Float
-  discount      Float?
-  courseDetails CourseDetail[]
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz()
-  cartItems     CartItem[]
-  lessons       Lesson[]
+  id           String   @id @default(uuid())
+  courseName   String   @map("course_name")
+  category     String
+  description  String   @db.Text
+  thumbnail    String   @map("thumbnail_url")
+  videoPreview String?  @map("video_preview")
+  price        Decimal  @db.Decimal(10, 2)
+  discount     Decimal? @db.Decimal(10, 2)
+  tags         String[]
+  status       Status   @default(DRAFT)
+
+  averageRating Decimal? @map("average_rating") @db.Decimal(3, 2)
+
+  instructorId String   @map("instructor_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  instructor      User             @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  courseDetails   CourseDetail[]
+  cartItems       CartItem[]
+  reviews         Review[]
+  enrolledCourses EnrolledCourse[]
+
+  willLearnMessages String[]
+  requirements      String[]
+  lessons           Lesson[]
 }
 
 model CourseDetail {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   courseId  String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  title     String
+  type      LessonType
+  video     String?
+  docs      String?    @db.Text
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Cart {
   id        String   @id @default(uuid())
-  userId    String
-  total     Float
-  subtotal  Float
-  discount  Float?
+  userId    String   @unique
+  total     Decimal
+  subtotal  Decimal
+  discount  Decimal?
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   user      User       @relation(fields: [userId], references: [id])
   cartItems CartItem[]
+  payment   Payment?
 }
 
 model CartItem {
-  id        String   @id @default(uuid())
-  cartId    String
-  courseId  String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  id       String @id @default(uuid())
+  cartId   String
+  courseId String
 
   cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, courseId], name: "cartItemIdentifier")
 }
 
 model Payment {
   id        String   @id @default(uuid())
-  cartId    String
+  cartId    String   @unique
+  userId    String
+  amount    Decimal  @db.Decimal(10, 2)
+  status    Status   @default(PENDING)
+  evidence  String?
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  cart Cart @relation(fields: [cartId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
-model Profile {
-  id     String @id @default(uuid())
-  userId String
-  phone  Int
-  image  String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Review {
+  id         String   @id @default(uuid())
+  content    String
+  rating     Int
+  courseId   String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @db.Timestamptz(6)
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Lesson {

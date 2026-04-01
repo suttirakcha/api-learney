@@ -2,19 +2,26 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // ✅ เปิด validation (สำคัญมาก)
+
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // ตัด field ที่ไม่ได้อยู่ใน DTO
-      forbidNonWhitelisted: true, // ถ้ามี field แปลก → error
-      transform: true, // auto แปลง type
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
-  // ✅ เปิด CORS (frontend จะเรียกได้)
-  app.enableCors();
+  app.use(cookieParser());
+
+  app.enableCors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  });
+
   await app.listen(process.env.PORT ?? 8000);
 }
-bootstrap().catch((error) => console.log(error));
+bootstrap().catch(console.error);
