@@ -26,6 +26,7 @@ model User {
   fullname  String
   email     String   @unique
   password  String
+<<<<<<< Updated upstream
   role      Role     @default(USER)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
@@ -34,19 +35,36 @@ model User {
   profiles Profile[]
   courses  Course[]
   payment  Payment[]
+=======
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  carts     Cart[]
+  profiles  Profile[]
+  courses   Course[]
+  payment Payment[]
+>>>>>>> Stashed changes
 }
 
 model Course {
   id           String   @id @default(uuid())
   courseName   String   @map("course_name")
   category     String
+<<<<<<< Updated upstream
   description  String   @db.Text
   thumbnail    String   @map("thumbnail_url")
   videoPreview String?  @map("video_preview")
+=======
+  description  String   @db.Text             
+  thumbnail    String   @map("thumbnail_url") 
+  videoPreview String?  @map("video_preview") 
+>>>>>>> Stashed changes
   price        Decimal  @db.Decimal(10, 2)
   discount     Decimal? @db.Decimal(10, 2)
   tags         String[]
   status       Status   @default(DRAFT)
+<<<<<<< Updated upstream
 
   averageRating Decimal? @map("average_rating") @db.Decimal(3, 2)
   totalStudents Int      @default(0) @map("total_students")
@@ -54,20 +72,42 @@ model Course {
   totalDuration String?  @map("total_duration")
 
   instructorId String   @map("instructor_id")
+=======
+  
+  averageRating Decimal? @db.Decimal(3, 2) @map("average_rating") 
+  totalStudents Int      @default(0)       @map("total_students")
+  totalLessons  Int      @default(0)       @map("total_lessons")
+  totalDuration String?  @map("total_duration")
+
+  instructorId String   @map("instructor_id") 
+>>>>>>> Stashed changes
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   instructor    User           @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+<<<<<<< Updated upstream
   courseDetails CourseDetail[]
   cartItems     CartItem[]
   reviews       Review[]
+=======
+  courseDetails CourseDetail[] 
+  cartItems     CartItem[]
+  reviews       Review[]
+
+  @@map("courses") 
+>>>>>>> Stashed changes
 }
 
 model CourseDetail {
   id        String   @id @default(uuid())
   courseId  String
+<<<<<<< Updated upstream
   title     String
   content   String?
+=======
+  title     String   
+  content   String? 
+>>>>>>> Stashed changes
   order     Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
@@ -101,9 +141,13 @@ model CartItem {
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
+<<<<<<< Updated upstream
   coursesId String?
 
   @@unique([cartId, courseId], name: "cartItemIdentifier")
+=======
+  @@unique([cartId, courseId])
+>>>>>>> Stashed changes
 }
 
 model Payment {
@@ -112,7 +156,11 @@ model Payment {
   userId    String
   amount    Decimal  @db.Decimal(10, 2)
   status    Status   @default(PENDING)
+<<<<<<< Updated upstream
   evidence  String?
+=======
+  evidence  String?  
+>>>>>>> Stashed changes
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
@@ -129,6 +177,7 @@ model Profile {
 }
 
 model Review {
+<<<<<<< Updated upstream
   id         String   @id @default(uuid())
   content    String
   rating     Int
@@ -139,4 +188,14 @@ model Review {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   coursesId String?
+=======
+  id        String   @id @default(uuid())
+  content   String
+  rating    Int 
+  courseId  String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+>>>>>>> Stashed changes
 }
