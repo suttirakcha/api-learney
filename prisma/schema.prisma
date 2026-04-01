@@ -21,6 +21,11 @@ enum Status {
   CANCELLED
 }
 
+enum LessonType {
+  VIDEO
+  DOCS
+}
+
 model User {
   id        String   @id @default(uuid())
   fullname  String
@@ -28,6 +33,8 @@ model User {
   password  String
 <<<<<<< Updated upstream
   role      Role     @default(USER)
+  phone     Int
+  image     String
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
@@ -99,7 +106,7 @@ model Course {
 }
 
 model CourseDetail {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   courseId  String
 <<<<<<< Updated upstream
   title     String
@@ -113,8 +120,6 @@ model CourseDetail {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  coursesId String?
 }
 
 model Cart {
@@ -135,10 +140,8 @@ model CartItem {
   id       String @id @default(uuid())
   cartId   String
   courseId String
-  // created_at DateTime @default(now()) @db.Timestamptz(6)
-  // updated_at DateTime @db.Timestamptz(6)
-  cart     Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
 <<<<<<< Updated upstream
@@ -166,14 +169,6 @@ model Payment {
 
   cart Cart @relation(fields: [cartId], references: [id])
   user User @relation(fields: [userId], references: [id])
-}
-
-model Profile {
-  id     String @id @default(uuid())
-  userId String
-  phone  Int
-  image  String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Review {
