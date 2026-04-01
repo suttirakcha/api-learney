@@ -68,7 +68,8 @@ async function main() {
       courseName: 'Complete Web Dev Bootcamp',
       category: 'Web Dev',
       description: 'Fullstack course',
-      thumbnail: 'https://placehold.co/600x400',
+      thumbnail:
+        'https://res.cloudinary.com/dxggc6pvz/image/upload/v1774557163/red_ovxuru.jpg',
       price: 8900,
       discount: 0,
       tags: ['web', 'fullstack'],
@@ -85,7 +86,8 @@ async function main() {
       courseName: 'Advanced React & Redux',
       category: 'Web Dev',
       description: 'React advance',
-      thumbnail: 'https://placehold.co/600x400',
+      thumbnail:
+        'https://res.cloudinary.com/dxggc6pvz/image/upload/v1774557162/green_pyjvnz.jpg',
       price: 6500,
       discount: 0,
       tags: ['react'],
@@ -102,7 +104,8 @@ async function main() {
       courseName: 'UI/UX Design Masterclass',
       category: 'Design',
       description: 'Design course',
-      thumbnail: 'https://placehold.co/600x400',
+      thumbnail:
+        'https://res.cloudinary.com/dxggc6pvz/image/upload/v1774557869/pink1_cnqvpv.jpg',
       price: 7900,
       discount: 0,
       tags: ['design'],

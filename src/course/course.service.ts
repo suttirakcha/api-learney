@@ -53,6 +53,7 @@ export class CourseService {
       duration: course.totalDuration || '0 ชม.',
       level: 'ทุกระดับ',
       image: course.thumbnail,
+      videoPreview: course.videoPreview,
     }));
   }
 
@@ -74,6 +75,7 @@ export class CourseService {
       price: `฿${course.price.toNumber()}`,
       instructor: course.instructor.fullname,
       image: course.thumbnail,
+      videoPreview: course.videoPreview,
       lessons: course.courseDetails,
     };
   }
@@ -91,7 +93,7 @@ export class CourseService {
         discount: new Prisma.Decimal(0),
 
         thumbnail: dto.thumbnail ?? '',
-
+        videoPreview: dto.videoPreview ?? null,
         instructorId: userId,
         status: 'PENDING',
       },
