@@ -1,5 +1,5 @@
-import { PaymentStatus } from '@/database/generated/prisma';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { PaymentStatus } from '@/database/generated/prisma/enums';
+import { IsEnum, IsOptional, IsString, IsNotEmpty } from 'class-validator';
 
 export class UpdatePaymentDto {
   @IsOptional()
@@ -8,5 +8,6 @@ export class UpdatePaymentDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   evidence?: string;
 }

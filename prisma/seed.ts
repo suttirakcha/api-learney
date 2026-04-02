@@ -174,7 +174,7 @@ async function main() {
       cartId: cart.id,
       userId: student.id,
       amount: 15400,
-      status: PaymentStatus.PENDING,
+      status: PaymentStatus.SUCCESS,
     },
   });
 
