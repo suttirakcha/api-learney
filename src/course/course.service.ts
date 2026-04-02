@@ -43,17 +43,11 @@ export class CourseService {
     });
 
     return courses.map((course) => ({
-      id: course.id,
+      ...course,
       price: `฿${course.price.toNumber()}`,
-      category: course.category,
-      title: course.courseName,
       instructor: course.instructor.fullname,
       rating: Number(course.averageRating || 0),
-      students: course.totalStudents,
-      duration: course.totalDuration || '0 ชม.',
       level: 'ทุกระดับ',
-      image: course.thumbnail,
-      videoPreview: course.videoPreview,
     }));
   }
 
@@ -158,7 +152,7 @@ export class CourseService {
         courseName: course.courseName,
         sales,
         revenue,
-        students: course.totalStudents,
+
         rating:
           course.reviews.length > 0
             ? Number(

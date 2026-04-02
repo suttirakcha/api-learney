@@ -75,9 +75,8 @@ async function main() {
       tags: ['web', 'fullstack'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      totalLessons: 10,
-      totalDuration: '5h',
-      totalStudents: 98,
+      willLearnMessages: ['You will learn how to develop websites'],
+      requirements: [],
     },
   });
 
@@ -93,9 +92,8 @@ async function main() {
       tags: ['react'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      totalLessons: 8,
-      totalDuration: '4h',
-      totalStudents: 56,
+      willLearnMessages: ['Use React to Learn'],
+      requirements: ['One computer', 'One OS'],
     },
   });
 
@@ -111,9 +109,8 @@ async function main() {
       tags: ['design'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      totalLessons: 12,
-      totalDuration: '6h',
-      totalStudents: 82,
+      willLearnMessages: ['Design websites effectively'],
+      requirements: [],
     },
   });
 
