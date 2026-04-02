@@ -18,7 +18,7 @@ export class CartService {
     });
 
     try {
-      return await this.prisma.cartItem.upsert({
+      await this.prisma.cartItem.upsert({
         where: {
           cartItemIdentifier: {
             cartId: cart.id,
@@ -31,6 +31,7 @@ export class CartService {
           courseId: courseId,
         },
       });
+      return { message: 'Added course to cart' };
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
@@ -58,7 +59,7 @@ export class CartService {
     }
 
     try {
-      return this.prisma.cartItem.delete({
+      await this.prisma.cartItem.delete({
         where: {
           cartItemIdentifier: {
             cartId: cart.id,
@@ -66,6 +67,7 @@ export class CartService {
           },
         },
       });
+      return { message: 'Removed course from cart' };
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
