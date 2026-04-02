@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { Prisma, PaymentStatus } from '@/database/generated/prisma';
+import { Prisma, PaymentStatus } from '@/database/generated/prisma/client';
 
 @Injectable()
 export class PaymentService {
