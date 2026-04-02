@@ -2,6 +2,7 @@ import 'dotenv';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
+  PaymentStatus,
   PrismaClient,
   Role,
   Status,
@@ -74,9 +75,6 @@ async function main() {
       tags: ['web', 'fullstack'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      totalLessons: 10,
-      totalDuration: '5h',
-      totalStudents: 98,
     },
   });
 
@@ -91,9 +89,6 @@ async function main() {
       tags: ['react'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      totalLessons: 8,
-      totalDuration: '4h',
-      totalStudents: 56,
     },
   });
 
@@ -108,9 +103,6 @@ async function main() {
       tags: ['design'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      totalLessons: 12,
-      totalDuration: '6h',
-      totalStudents: 82,
     },
   });
 
@@ -179,7 +171,7 @@ async function main() {
       cartId: cart.id,
       userId: student.id,
       amount: 15400,
-      status: Status.ACTIVE,
+      status: PaymentStatus.PENDING,
     },
   });
 
