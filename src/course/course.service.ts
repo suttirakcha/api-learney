@@ -43,16 +43,11 @@ export class CourseService {
     });
 
     return courses.map((course) => ({
-      id: course.id,
+      ...course,
       price: `฿${course.price.toNumber()}`,
-      category: course.category,
-      title: course.courseName,
       instructor: course.instructor.fullname,
       rating: Number(course.averageRating || 0),
-      students: course.totalStudents,
-      duration: course.totalDuration || '0 ชม.',
       level: 'ทุกระดับ',
-      image: course.thumbnail,
     }));
   }
 
@@ -74,13 +69,14 @@ export class CourseService {
       price: `฿${course.price.toNumber()}`,
       instructor: course.instructor.fullname,
       image: course.thumbnail,
+      videoPreview: course.videoPreview,
       lessons: course.courseDetails,
     };
   }
 
   // 🔥 CREATE COURSE (เพิ่มใหม่ + แก้ type)
   async createCourse(userId: string, dto: CreateCourseDto) {
-    return this.prisma.course.create({
+    return await this.prisma.course.create({
       data: {
         courseName: dto.courseName,
         description: dto.description,
@@ -91,7 +87,7 @@ export class CourseService {
         discount: new Prisma.Decimal(0),
 
         thumbnail: dto.thumbnail ?? '',
-
+        videoPreview: dto.videoPreview ?? null,
         instructorId: userId,
         status: 'PENDING',
       },
@@ -99,7 +95,7 @@ export class CourseService {
   }
   // 🔥 instructor: ดูคอร์สตัวเอง
   async getMyCourses(userId: string) {
-    return this.prisma.course.findMany({
+    return await this.prisma.course.findMany({
       where: {
         instructorId: userId,
       },
@@ -156,7 +152,7 @@ export class CourseService {
         courseName: course.courseName,
         sales,
         revenue,
-        students: course.totalStudents,
+
         rating:
           course.reviews.length > 0
             ? Number(

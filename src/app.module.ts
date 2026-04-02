@@ -13,6 +13,7 @@ import { CartModule } from './cart/cart.module';
 import { AdminModule } from './admin/admin.module';
 import { CourseModule } from './course/course.module';
 import { InstructorModule } from './instructor/instructor.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { InstructorModule } from './instructor/instructor.module';
     AdminModule,
     CourseModule,
     InstructorModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],

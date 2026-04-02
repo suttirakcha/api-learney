@@ -7,7 +7,7 @@ type CourseStat = {
   courseName: string;
   sales: number;
   revenue: number;
-  students: number;
+
   rating: number;
 };
 
@@ -62,7 +62,7 @@ export class InstructorService {
         courseName: course.courseName,
         sales: 0,
         revenue: 0,
-        students: course.totalStudents || 0,
+
         rating:
           course.reviews.length > 0
             ? course.reviews.reduce((sum, r) => sum + r.rating, 0) /
