@@ -156,7 +156,6 @@ export class AdminService {
         rating: Number(rating.toFixed(1)),
         platformFee: Number((revenue * 0.15).toFixed(2)),
         instructorEarn: Number((revenue * 0.85).toFixed(2)),
-        students: course.totalStudents,
       };
     });
   }

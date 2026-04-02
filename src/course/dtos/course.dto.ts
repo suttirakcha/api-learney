@@ -29,4 +29,7 @@ export class CreateCourseDto {
   @IsOptional()
   @IsString()
   thumbnail?: string;
+  @IsOptional()
+  @IsString()
+  videoPreview?: string;
 }
