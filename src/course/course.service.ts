@@ -76,7 +76,7 @@ export class CourseService {
 
   // 🔥 CREATE COURSE (เพิ่มใหม่ + แก้ type)
   async createCourse(userId: string, dto: CreateCourseDto) {
-    return this.prisma.course.create({
+    return await this.prisma.course.create({
       data: {
         courseName: dto.courseName,
         description: dto.description,
@@ -95,7 +95,7 @@ export class CourseService {
   }
   // 🔥 instructor: ดูคอร์สตัวเอง
   async getMyCourses(userId: string) {
-    return this.prisma.course.findMany({
+    return await this.prisma.course.findMany({
       where: {
         instructorId: userId,
       },
