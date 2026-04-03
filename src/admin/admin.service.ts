@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { Status } from 'src/database/generated/prisma/enums';
+import { PaymentStatus, Status } from 'src/database/generated/prisma/enums';
 
 @Injectable()
 export class AdminService {
@@ -78,13 +78,13 @@ export class AdminService {
   async getDashboard() {
     const revenue = await this.prisma.payment.aggregate({
       _sum: { amount: true },
-      where: { status: Status.ACTIVE },
+      where: { status: PaymentStatus.SUCCESS },
     });
 
     const totalRevenue = Number(revenue._sum.amount || 0);
 
     const totalSales = await this.prisma.payment.count({
-      where: { status: Status.ACTIVE },
+      where: { status: PaymentStatus.SUCCESS },
     });
 
     const totalCourses = await this.prisma.course.count({
@@ -121,7 +121,7 @@ export class AdminService {
 
     return courses.map((course) => {
       const paidItems = course.cartItems.filter(
-        (item) => item.cart.payment?.status === Status.ACTIVE,
+        (item) => item.cart.payment?.status === PaymentStatus.SUCCESS,
       );
 
       // ✅ กัน payment ซ้ำ (สำคัญมาก)
@@ -130,7 +130,7 @@ export class AdminService {
       paidItems.forEach((item) => {
         const payment = item.cart.payment;
 
-        if (payment && payment.status === Status.ACTIVE) {
+        if (payment && payment.status === PaymentStatus.SUCCESS) {
           uniquePayments.set(payment.id, Number(payment.amount));
         }
       });

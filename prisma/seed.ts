@@ -2,6 +2,7 @@ import 'dotenv';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
+  PaymentStatus,
   PrismaClient,
   Role,
   Status,
@@ -179,7 +180,7 @@ async function main() {
       cartId: cart.id,
       userId: student.id,
       amount: 15400,
-      status: Status.ACTIVE,
+      status: PaymentStatus.SUCCESS,
     },
   });
 
