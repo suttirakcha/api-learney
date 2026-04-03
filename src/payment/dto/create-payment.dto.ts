@@ -4,13 +4,13 @@ import { Type } from 'class-transformer';
 export class CreatePaymentDto {
   @Type(() => Number) // ✅ แปลง string → number (สำคัญมาก)
   @IsNumber()
-  amount: number;
+  amount!: number;
 
   @IsString()
   @IsNotEmpty()
-  userId: string;
+  userId!: string;
 
   @IsString()
   @IsNotEmpty()
-  cartId: string;
+  cartId!: string;
 }

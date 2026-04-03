@@ -124,7 +124,7 @@ export class CourseService {
 
     const courseStats = courses.map((course) => {
       const paidItems = course.cartItems.filter(
-        (item) => item.cart.payment?.status === 'ACTIVE',
+        (item) => item.cart.payment?.status === 'SUCCESS',
       );
 
       const uniquePayments = new Map<string, number>();
