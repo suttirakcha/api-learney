@@ -1,6 +1,12 @@
 import { Logger } from '@nestjs/common';
 import z from 'zod';
+const booleanFromEnv = z.preprocess((value) => {
+  if (typeof value === 'string') return value.toLowerCase() === 'true';
+  return value;
+}, z.boolean());
 
+const plainEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const displayNameEmailPattern = /^.+\s<[^<>\s@]+@[^\s@]+\.[^\s@]+>$/;
 const envSchema = z.object({
   PORT: z.coerce.number().int().min(0).max(65535),
   DATABASE_URL: z.url(),
@@ -10,6 +16,32 @@ const envSchema = z.object({
   CLOUD_NAME: z.string(),
   API_KEY: z.string(),
   API_SECRET: z.string(),
+  MAIL_HOST: z.string().min(1).optional(),
+  MAIL_PORT: z.coerce.number().int().positive().default(587),
+  MAIL_USER: z.string().min(1).optional(),
+  MAIL_PASSWORD: z.string().min(1).optional(),
+  MAIL_FROM: z
+    .string()
+    .trim()
+    .refine(
+      (value) =>
+        plainEmailPattern.test(value) || displayNameEmailPattern.test(value),
+      {
+        message:
+          'MAIL_FROM must be either "email@example.com" or "Display Name <email@example.com>"',
+      },
+    )
+    .default('no-reply@fakebuck.local'),
+  MAIL_SECURE: booleanFromEnv.default(false),
+  RESET_PASSWORD_TOKEN_EXPIRES_IN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(900),
+  FRONTEND_RESET_PASSWORD_URL: z
+    .string()
+    .url()
+    .default('http://localhost:3000/reset-password'),
 });
 
 export type EnvConfigType = z.infer<typeof envSchema>;

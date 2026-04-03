@@ -12,6 +12,8 @@ import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
 import { Public } from './decorators/public.decorator';
 import { AuthTokenService } from '../shared/securities/services/auth-token.service';
+import { ForgotPasswordDto } from './dtos/forgot-password.dto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -28,18 +30,26 @@ export class AuthController {
   ) {
     const data = await this.authService.register(dto);
 
-    // ✅ set refresh token (HttpOnly)
+    // ✅ refresh token
     res.cookie('refreshToken', data.refreshToken, {
       httpOnly: true,
-      secure: false, // 👉 dev = false / production = true
+      secure: false,
       sameSite: 'lax',
       path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 วัน
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    // 🔥 NEW: access token
+    res.cookie('accessToken', data.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 15,
     });
 
     return {
       user: data.user,
-      accessToken: data.accessToken,
     };
   }
 
@@ -51,18 +61,25 @@ export class AuthController {
   ) {
     const data = await this.authService.login(dto);
 
-    // ✅ set refresh token ONLY
     res.cookie('refreshToken', data.refreshToken, {
       httpOnly: true,
-      secure: false, // 👉 dev = false
+      secure: false,
       sameSite: 'lax',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
+    // 🔥 NEW
+    res.cookie('accessToken', data.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 15,
+    });
+
     return {
       user: data.user,
-      accessToken: data.accessToken,
     };
   }
 
@@ -86,7 +103,6 @@ export class AuthController {
       role: payload.role,
     });
 
-    // 🔥 refresh token rotation (สำคัญ)
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       secure: false,
@@ -95,17 +111,40 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
-    return {
-      accessToken: tokens.accessToken,
-    };
+    // 🔥 NEW
+    res.cookie('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 15,
+    });
+
+    return {};
   }
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refreshToken');
+    res.clearCookie('accessToken'); // 🔥 NEW
 
     return {
       message: 'Logged out',
     };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
+    await this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    await this.authService.resetPassword(resetPasswordDto);
+    return { message: 'suss' };
   }
 }

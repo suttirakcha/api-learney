@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { PaymentStatus } from 'src/database/generated/prisma/enums';
 
 // ✅ ย้ายออกมานอก class
 type CourseStat = {
@@ -36,7 +37,7 @@ export class InstructorService {
     // ===============================
     const payments = await this.prisma.payment.findMany({
       where: {
-        status: 'ACTIVE',
+        status: PaymentStatus.SUCCESS,
       },
       include: {
         cart: {

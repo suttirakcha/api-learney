@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
-import { Prisma, Status } from '../database/generated/prisma/client';
+import {
+  PaymentStatus,
+  Prisma,
+  Status,
+} from '../database/generated/prisma/client';
 import { QueryCourseDto, CreateCourseDto } from './dtos/course.dto';
 
 // ✅ เพิ่มบรรทัดนี้
@@ -124,7 +128,7 @@ export class CourseService {
 
     const courseStats = courses.map((course) => {
       const paidItems = course.cartItems.filter(
-        (item) => item.cart.payment?.status === 'ACTIVE',
+        (item) => item.cart.payment?.status === PaymentStatus.SUCCESS,
       );
 
       const uniquePayments = new Map<string, number>();

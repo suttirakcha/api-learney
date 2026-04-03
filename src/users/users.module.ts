@@ -8,5 +8,6 @@ import { SecuritiesModule } from '../shared/securities/securities.module';
   imports: [DatabaseModule, SecuritiesModule],
   controllers: [UsersController],
   providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}
