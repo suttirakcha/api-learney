@@ -1,18 +1,39 @@
-// import { Controller, Post, Body, Delete } from '@nestjs/common';
-// import { CartService } from './cart.service';
-// import { CartDto } from './dto/cart.dto';
+import {
+  Controller,
+  Post,
+  Body,
+  Delete,
+  UseGuards,
+  Req,
+  Get,
+} from '@nestjs/common';
+import { CartService } from './cart.service';
+import { CartDto } from './dto/cart.dto';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { RoleGuard } from 'src/auth/guards/role.guard';
+import { type Request } from 'express';
+import { JwtPayload } from 'src/types/jwt-payload.type';
 
-// @Controller('cart')
-// export class CartController {
-//   constructor(private readonly cartService: CartService) {}
+@Controller('cart')
+@UseGuards(AuthGuard, RoleGuard)
+export class CartController {
+  constructor(private readonly cartService: CartService) {}
 
-//   @Post()
-//   addItemToCart(@Body() cartDto: CartDto, userId: string) {
-//     return this.cartService.addItemToCart(userId, cartDto.courseId);
-//   }
+  @Get('')
+  getCurrentCart(@Req() req: Request) {
+    const userId = (req.user as JwtPayload).sub;
+    return this.cartService.getCurrentCart(userId);
+  }
 
-//   @Delete()
-//   removeItemFromCart(@Body() cartDto: CartDto, userId: string) {
-//     return this.cartService.removeItemFromCart(userId, cartDto.courseId);
-//   }
-// }
+  @Post()
+  addItemToCart(@Body() cartDto: CartDto, @Req() req: Request) {
+    const userId = (req.user as JwtPayload).sub;
+    return this.cartService.addItemToCart(userId, cartDto.courseId);
+  }
+
+  @Delete()
+  removeItemFromCart(@Body() cartDto: CartDto, @Req() req: Request) {
+    const userId = (req.user as JwtPayload).sub;
+    return this.cartService.removeItemFromCart(userId, cartDto.courseId);
+  }
+}
