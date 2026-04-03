@@ -1,7 +1,38 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Get,
+  Delete,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { LessonService } from './lesson.service';
+import { CreateLessonDto } from './dtos/create-lesson.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
-@Controller('lesson')
+@Controller('courses/:courseId/lessons')
 export class LessonController {
-  @Get(':courseId')
-  lesson() {}
+  constructor(private readonly lessonService: LessonService) {}
+
+  @Post()
+  @UseInterceptors(FileInterceptor('file'))
+  create(
+    @Param('courseId') courseId: string,
+    @Body() dto: CreateLessonDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.lessonService.create(courseId, dto, file);
+  }
+
+  @Get()
+  findAll(@Param('courseId') courseId: string) {
+    return this.lessonService.findByCourse(courseId);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.lessonService.delete(id);
+  }
 }

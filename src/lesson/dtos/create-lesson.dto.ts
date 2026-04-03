@@ -4,19 +4,14 @@ import { LessonType } from 'src/database/generated/prisma/enums';
 export class CreateLessonDto {
   @IsString()
   @IsNotEmpty()
-  id: string;
+  title!: string;
 
   @IsEnum(LessonType)
-  @IsNotEmpty()
-  type: LessonType;
+  type!: LessonType;
 
   @IsString()
-  @ValidateIf((value: CreateLessonDto) => value.type === LessonType.VIDEO)
-  @IsNotEmpty()
-  video: string;
+  video?: string;
 
   @IsString()
-  @ValidateIf((value: CreateLessonDto) => value.type === LessonType.DOCS)
-  @IsNotEmpty()
-  docs: string;
+  docs?: string;
 }

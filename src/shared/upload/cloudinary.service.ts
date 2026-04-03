@@ -6,9 +6,9 @@ import { TypedConfigService } from 'src/config/typed-config.service';
 export class CloudinaryService {
   constructor(private readonly typedConfigService: TypedConfigService) {
     cloudinary.config({
-      cloud_name: typedConfigService.get('CLOUDINARY_CLOUD_NAME'),
-      api_key: typedConfigService.get('CLOUDINARY_API_KEY'),
-      api_secret: typedConfigService.get('CLOUDINARY_API_SECRET'),
+      CLOUD_NAME: typedConfigService.get('CLOUD_NAME'),
+      API_KEY: typedConfigService.get('API_KEY'),
+      API_SECRET: typedConfigService.get('API_SECRET'),
     });
   }
 }
