@@ -21,7 +21,7 @@ export class CourseService {
 
         ...(search
           ? {
-              courseName: {
+              course_name: {
                 contains: search,
                 mode: 'insensitive',
               },
