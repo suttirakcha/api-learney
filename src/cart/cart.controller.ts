@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Delete, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Delete,
+  UseGuards,
+  Req,
+  Get,
+} from '@nestjs/common';
 import { CartService } from './cart.service';
 import { CartDto } from './dto/cart.dto';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
@@ -10,6 +18,12 @@ import { JwtPayload } from 'src/types/jwt-payload.type';
 @UseGuards(AuthGuard, RoleGuard)
 export class CartController {
   constructor(private readonly cartService: CartService) {}
+
+  @Get('')
+  getCurrentCart(@Req() req: Request) {
+    const userId = (req.user as JwtPayload).sub;
+    return this.cartService.getCurrentCart(userId);
+  }
 
   @Post()
   addItemToCart(@Body() cartDto: CartDto, @Req() req: Request) {
