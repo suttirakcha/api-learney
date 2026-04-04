@@ -44,10 +44,7 @@ export class CourseService {
 
     return courses.map((course) => ({
       ...course,
-      price: `฿${course.price.toNumber()}`,
       instructor: course.instructor.fullname,
-      rating: Number(course.averageRating || 0),
-      level: 'ทุกระดับ',
     }));
   }
 
@@ -62,16 +59,7 @@ export class CourseService {
 
     if (!course) return null;
 
-    return {
-      id: course.id,
-      title: course.courseName,
-      description: course.description,
-      price: `฿${course.price.toNumber()}`,
-      instructor: course.instructor.fullname,
-      image: course.thumbnail,
-      videoPreview: course.videoPreview,
-      lessons: course.courseDetails,
-    };
+    return course;
   }
 
   // 🔥 CREATE COURSE (เพิ่มใหม่ + แก้ type)
