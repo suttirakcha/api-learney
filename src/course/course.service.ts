@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
-import { Prisma, Status } from '../database/generated/prisma/client';
+import {
+  PaymentStatus,
+  Prisma,
+  Status,
+} from '../database/generated/prisma/client';
 import { QueryCourseDto, CreateCourseDto } from './dtos/course.dto';
 
 // ✅ เพิ่มบรรทัดนี้
@@ -44,10 +48,7 @@ export class CourseService {
 
     return courses.map((course) => ({
       ...course,
-      price: `฿${course.price.toNumber()}`,
       instructor: course.instructor.fullname,
-      rating: Number(course.averageRating || 0),
-      level: 'ทุกระดับ',
     }));
   }
 
@@ -62,16 +63,7 @@ export class CourseService {
 
     if (!course) return null;
 
-    return {
-      id: course.id,
-      title: course.courseName,
-      description: course.description,
-      price: `฿${course.price.toNumber()}`,
-      instructor: course.instructor.fullname,
-      image: course.thumbnail,
-      videoPreview: course.videoPreview,
-      lessons: course.courseDetails,
-    };
+    return course;
   }
 
   // 🔥 CREATE COURSE (เพิ่มใหม่ + แก้ type)
@@ -124,7 +116,7 @@ export class CourseService {
 
     const courseStats = courses.map((course) => {
       const paidItems = course.cartItems.filter(
-        (item) => item.cart.payment?.status === 'SUCCESS',
+        (item) => item.cart.payment?.status === PaymentStatus.SUCCESS,
       );
 
       const uniquePayments = new Map<string, number>();

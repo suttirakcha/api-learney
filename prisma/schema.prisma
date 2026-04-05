@@ -21,6 +21,12 @@ enum Status {
   CANCELLED
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 enum LessonType {
   VIDEO
   DOCS
@@ -125,14 +131,14 @@ model CartItem {
 }
 
 model Payment {
-  id        String   @id @default(uuid())
-  cartId    String   @unique
+  id        String        @id @default(uuid())
+  cartId    String        @unique
   userId    String
-  amount    Decimal  @db.Decimal(10, 2)
-  status    PaymentStatus   @default(PENDING)
+  amount    Decimal       @db.Decimal(10, 2)
+  status    PaymentStatus @default(PENDING)
   evidence  String?
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
 
   cart Cart @relation(fields: [cartId], references: [id])
   user User @relation(fields: [userId], references: [id])

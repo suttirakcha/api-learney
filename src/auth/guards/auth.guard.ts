@@ -1,12 +1,10 @@
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JsonWebTokenError, TokenExpiredError } from '@nestjs/jwt';
 import { Request } from 'express';
 import { AuthTokenService } from '../../shared/securities/services/auth-token.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -32,26 +30,26 @@ export class AuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<RequestWithUser>();
 
-    const [bearer, token] = request.headers.authorization?.split(' ') ?? [];
+    const authHeader = request.headers.authorization;
+    let token: string | undefined;
 
-    if (bearer !== 'Bearer' || !token) {
-      throw new BadRequestException('Invalid authorization header');
+    // ✅ รองรับ header (เผื่อ)
+    if (authHeader) {
+      const [bearer, value] = authHeader.split(' ');
+      if (bearer === 'Bearer') token = value;
     }
 
-    try {
-      const payload = await this.authTokenService.verify(token);
-      request.user = payload; // ✅ ไม่ error แล้ว
-    } catch (error) {
-      if (error instanceof JsonWebTokenError) {
-        throw new UnauthorizedException('Invalid token');
-      }
-
-      if (error instanceof TokenExpiredError) {
-        throw new UnauthorizedException('Token has expired');
-      }
-
-      throw error;
+    // 🔥 ใช้ cookie
+    if (!token) {
+      token = request.cookies?.accessToken as string | undefined;
     }
+
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+
+    const payload = await this.authTokenService.verify(token);
+    request.user = payload;
 
     return true;
   }
