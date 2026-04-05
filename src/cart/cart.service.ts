@@ -22,13 +22,20 @@ export class CartService {
     const cartItems = await this.prisma.cartItem.findMany({
       where: { cartId: cart.id },
       include: {
-        course: true,
+        course: {
+          include: {
+            instructor: true,
+          },
+        },
       },
     });
 
     return {
       cart,
-      courses: cartItems.map((item) => item.course),
+      courses: cartItems.map((item) => ({
+        ...item.course,
+        instructor: item.course.instructor.fullname,
+      })),
     };
   }
 
