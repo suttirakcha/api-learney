@@ -8,6 +8,7 @@ export class MailService {
     private readonly mailerService: MailerService,
     private readonly typedConfigService: TypedConfigService,
   ) {}
+
   async sendResetPasswordEmail(
     to: string,
     resetUrl: string,
@@ -23,6 +24,7 @@ export class MailService {
       html: this.buildResetPasswordHtml(safeName, resetUrl),
     });
   }
+
   private buildResetPasswordHtml(name: string, resetUrl: string): string {
     return `
       <div style="background:#f5f7fb;padding:24px 12px;font-family:Arial,sans-serif;color:#1f2937;">

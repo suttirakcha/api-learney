@@ -6,7 +6,7 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from './dtos/register.dto';
@@ -15,12 +15,42 @@ import { AuthTokenService } from '../shared/securities/services/auth-token.servi
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 
+const REFRESH_TOKEN_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
+const ACCESS_TOKEN_MAX_AGE = 1000 * 60 * 15;
+
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly tokenService: AuthTokenService,
   ) {}
+
+  private getCookieOptions(maxAge: number): CookieOptions {
+    return {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    };
+  }
+
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    res.cookie(
+      'refreshToken',
+      refreshToken,
+      this.getCookieOptions(REFRESH_TOKEN_MAX_AGE),
+    );
+    res.cookie(
+      'accessToken',
+      accessToken,
+      this.getCookieOptions(ACCESS_TOKEN_MAX_AGE),
+    );
+  }
 
   @Public()
   @Post('register')
@@ -30,23 +60,7 @@ export class AuthController {
   ) {
     const data = await this.authService.register(dto);
 
-    // ✅ refresh token
-    res.cookie('refreshToken', data.refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
-
-    // 🔥 NEW: access token
-    res.cookie('accessToken', data.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 1000 * 60 * 15,
-    });
+    this.setAuthCookies(res, data.accessToken, data.refreshToken);
 
     return {
       user: data.user,
@@ -62,22 +76,7 @@ export class AuthController {
   ) {
     const data = await this.authService.login(dto);
 
-    res.cookie('refreshToken', data.refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
-
-    // 🔥 NEW
-    res.cookie('accessToken', data.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 1000 * 60 * 15,
-    });
+    this.setAuthCookies(res, data.accessToken, data.refreshToken);
 
     return {
       user: data.user,
@@ -105,22 +104,7 @@ export class AuthController {
       role: payload.role,
     });
 
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
-
-    // 🔥 NEW
-    res.cookie('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 1000 * 60 * 15,
-    });
+    this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
     return {
       accessToken: tokens.accessToken,
@@ -129,8 +113,9 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('refreshToken');
-    res.clearCookie('accessToken'); // 🔥 NEW
+    const cookieOptions = this.getCookieOptions(0);
+    res.clearCookie('refreshToken', cookieOptions);
+    res.clearCookie('accessToken', cookieOptions);
 
     return {
       message: 'Logged out',
@@ -149,6 +134,6 @@ export class AuthController {
     @Body() resetPasswordDto: ResetPasswordDto,
   ): Promise<{ message: string }> {
     await this.authService.resetPassword(resetPasswordDto);
-    return { message: 'suss' };
+    return { message: 'Password reset successful' };
   }
 }

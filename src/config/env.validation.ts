@@ -60,8 +60,6 @@ const envSchema = z.object({
   FRONTEND_RESET_PASSWORD_URL: optionalEnvUrl.default(
     'http://localhost:3000/reset-password',
   ),
-  STRIPE_SECRET_KEY: optionalEnvString,
-  STRIPE_WEBHOOK_SECRET: optionalEnvString,
   FRONTEND_URL: optionalEnvUrl.default('http://localhost:3000'),
 });
 

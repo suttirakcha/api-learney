@@ -12,29 +12,33 @@ import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { RoleGuard } from 'src/auth/guards/role.guard';
 import { JwtPayload } from 'src/types/jwt-payload.type';
 
+type RequestWithUser = Request & {
+  user: JwtPayload;
+};
+
 @Controller('payments')
 @UseGuards(AuthGuard, RoleGuard)
 export class PaymentController {
   constructor(private readonly service: PaymentService) {}
 
   @Post('mock/session')
-  createMockSession(@Req() req: Request) {
-    const user = req.user as JwtPayload;
-    return this.service.createMockSession(user.sub);
+  createMockSession(@Req() req: RequestWithUser) {
+    return this.service.createMockSession(req.user.sub);
   }
 
   @Get('mock/:paymentId')
-  getMockPayment(@Param('paymentId') paymentId: string, @Req() req: Request) {
-    const user = req.user as JwtPayload;
-    return this.service.getMockPayment(user.sub, paymentId);
+  getMockPayment(
+    @Param('paymentId') paymentId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.service.getMockPayment(req.user.sub, paymentId);
   }
 
   @Post('mock/:paymentId/confirm')
   confirmMockPayment(
     @Param('paymentId') paymentId: string,
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
   ) {
-    const user = req.user as JwtPayload;
-    return this.service.confirmMockPayment(user.sub, paymentId);
+    return this.service.confirmMockPayment(req.user.sub, paymentId);
   }
 }

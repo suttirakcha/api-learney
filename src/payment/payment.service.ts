@@ -22,9 +22,41 @@ import {
 export class PaymentService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private buildSessionResponse(
+    paymentId: string,
+    latestSession: MockPaymentSession,
+    courseCount: number,
+  ): MockPaymentSessionResponse {
+    return {
+      paymentId,
+      amount: latestSession.amount,
+      status: 'PENDING',
+      referenceCode: latestSession.referenceCode,
+      qrCodeValue: latestSession.qrCodeValue,
+      createdAt: latestSession.createdAt,
+      courseCount,
+    };
+  }
+
   private toNumber(value: unknown): number {
     const parsedValue = typeof value === 'number' ? value : Number(value);
     return Number.isFinite(parsedValue) ? parsedValue : 0;
+  }
+
+  private getCartAmount(
+    total: unknown,
+    cartItems: Array<{ course: { price: unknown } }>,
+  ): number {
+    const cartTotal = this.toNumber(total);
+
+    if (cartTotal > 0) {
+      return cartTotal;
+    }
+
+    return cartItems.reduce(
+      (sum, item) => sum + this.toNumber(item.course.price),
+      0,
+    );
   }
 
   private async getCartSnapshot(userId: string) {
@@ -53,11 +85,7 @@ export class PaymentService {
     }
 
     const courseIds = cart.cartItems.map((item) => item.courseId).sort();
-    const calculatedTotal = cart.cartItems.reduce(
-      (sum, item) => sum + this.toNumber(item.course.price),
-      0,
-    );
-    const amount = this.toNumber(cart.total) || calculatedTotal;
+    const amount = this.getCartAmount(cart.total, cart.cartItems);
 
     if (amount <= 0) {
       throw new BadRequestException('Cart total must be greater than zero.');
@@ -109,15 +137,11 @@ export class PaymentService {
         },
       });
 
-      return {
-        paymentId: createdPayment.id,
-        amount,
-        status: 'PENDING',
-        referenceCode: latestSession.referenceCode,
-        qrCodeValue: latestSession.qrCodeValue,
-        createdAt: latestSession.createdAt,
-        courseCount: courseIds.length,
-      };
+      return this.buildSessionResponse(
+        createdPayment.id,
+        latestSession,
+        courseIds.length,
+      );
     }
 
     const parsedEvidence = parsePaymentEvidence(existingPayment.evidence);
@@ -135,15 +159,11 @@ export class PaymentService {
       },
     });
 
-    return {
-      paymentId: updatedPayment.id,
-      amount,
-      status: 'PENDING',
-      referenceCode: latestSession.referenceCode,
-      qrCodeValue: latestSession.qrCodeValue,
-      createdAt: latestSession.createdAt,
-      courseCount: courseIds.length,
-    };
+    return this.buildSessionResponse(
+      updatedPayment.id,
+      latestSession,
+      courseIds.length,
+    );
   }
 
   async getMockPayment(
@@ -220,12 +240,10 @@ export class PaymentService {
     const latestCourseIds = payment.cart.cartItems
       .map((item) => item.courseId)
       .sort();
-    const latestAmount =
-      this.toNumber(payment.cart.total) ||
-      payment.cart.cartItems.reduce(
-        (sum, item) => sum + this.toNumber(item.course.price),
-        0,
-      );
+    const latestAmount = this.getCartAmount(
+      payment.cart.total,
+      payment.cart.cartItems,
+    );
 
     if (
       Math.abs(latestAmount - latestSession.amount) > 0.001 ||
