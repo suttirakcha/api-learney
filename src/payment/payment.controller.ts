@@ -1,42 +1,40 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
   Param,
-  Delete,
+  Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { CreatePaymentDto } from './dto/create-payment.dto';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
+import type { Request } from 'express';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { RoleGuard } from 'src/auth/guards/role.guard';
+import { JwtPayload } from 'src/types/jwt-payload.type';
 
 @Controller('payments')
+@UseGuards(AuthGuard, RoleGuard)
 export class PaymentController {
   constructor(private readonly service: PaymentService) {}
 
-  @Post()
-  create(@Body() dto: CreatePaymentDto) {
-    return this.service.create(dto);
+  @Post('mock/session')
+  createMockSession(@Req() req: Request) {
+    const user = req.user as JwtPayload;
+    return this.service.createMockSession(user.sub);
   }
 
-  @Get()
-  findAll() {
-    return this.service.findAll();
+  @Get('mock/:paymentId')
+  getMockPayment(@Param('paymentId') paymentId: string, @Req() req: Request) {
+    const user = req.user as JwtPayload;
+    return this.service.getMockPayment(user.sub, paymentId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdatePaymentDto) {
-    return this.service.update(id, dto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  @Post('mock/:paymentId/confirm')
+  confirmMockPayment(
+    @Param('paymentId') paymentId: string,
+    @Req() req: Request,
+  ) {
+    const user = req.user as JwtPayload;
+    return this.service.confirmMockPayment(user.sub, paymentId);
   }
 }

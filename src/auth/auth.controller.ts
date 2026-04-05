@@ -50,6 +50,7 @@ export class AuthController {
 
     return {
       user: data.user,
+      accessToken: data.accessToken,
     };
   }
 
@@ -80,6 +81,7 @@ export class AuthController {
 
     return {
       user: data.user,
+      accessToken: data.accessToken,
     };
   }
 
@@ -120,7 +122,9 @@ export class AuthController {
       maxAge: 1000 * 60 * 15,
     });
 
-    return {};
+    return {
+      accessToken: tokens.accessToken,
+    };
   }
 
   @Post('logout')
