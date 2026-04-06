@@ -77,7 +77,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     return {
-      user,
+      user: this.userService.toSafeUser(user),
       ...tokens,
     };
   }
@@ -102,7 +102,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     return {
-      user,
+      user: this.userService.toSafeUser(user),
       ...tokens,
     };
   }
