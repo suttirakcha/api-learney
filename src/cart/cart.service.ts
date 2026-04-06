@@ -22,16 +22,58 @@ export class CartService {
     const cartItems = await this.prisma.cartItem.findMany({
       where: { cartId: cart.id },
       include: {
-        course: true,
+        course: {
+          include: {
+            instructor: true,
+          },
+        },
       },
     });
 
     return {
       cart,
-      courses: cartItems.map((item) => item.course),
+      courses: cartItems.map((item) => ({
+        ...item.course,
+        instructor: item.course.instructor.fullname,
+      })),
     };
   }
 
+  private async updateCart(cartId: string) {
+    const cartItems = await this.prisma.cartItem.findMany({
+      where: { cartId },
+      include: {
+        course: {
+          select: {
+            courseName: true,
+            instructor: true,
+            price: true,
+          },
+        },
+      },
+    });
+
+    const subtotal = cartItems.reduce(
+      (acc, curr) => acc + Number(curr.course.price),
+      0,
+    );
+
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      select: { discount: true },
+    });
+
+    const discount = Number(cart?.discount || 0);
+    const total = Math.max(0, subtotal - discount);
+
+    return await this.prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        subtotal,
+        total,
+      },
+    });
+  }
   async addItemToCart(userId: string, courseId: string) {
     const cart = await this.prisma.cart.upsert({
       where: { userId },
@@ -62,6 +104,8 @@ export class CartService {
           },
         },
       });
+
+      await this.updateCart(cart.id);
       return { message: 'Added course to cart' };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -95,6 +139,8 @@ export class CartService {
           },
         },
       });
+
+      await this.updateCart(cart.id);
       return { message: 'Removed course from cart' };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {

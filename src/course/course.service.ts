@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
-import { Prisma, Status } from '../database/generated/prisma/client';
+import {
+  PaymentStatus,
+  Prisma,
+  Status,
+} from '../database/generated/prisma/client';
 import { QueryCourseDto, CreateCourseDto } from './dtos/course.dto';
 
 // ✅ เพิ่มบรรทัดนี้
@@ -44,10 +48,7 @@ export class CourseService {
 
     return courses.map((course) => ({
       ...course,
-      price: `฿${course.price.toNumber()}`,
       instructor: course.instructor.fullname,
-      rating: Number(course.averageRating || 0),
-      level: 'ทุกระดับ',
     }));
   }
 
@@ -62,16 +63,7 @@ export class CourseService {
 
     if (!course) return null;
 
-    return {
-      id: course.id,
-      title: course.courseName,
-      description: course.description,
-      price: `฿${course.price.toNumber()}`,
-      instructor: course.instructor.fullname,
-      image: course.thumbnail,
-      videoPreview: course.videoPreview,
-      lessons: course.courseDetails,
-    };
+    return course;
   }
 
   // 🔥 CREATE COURSE (เพิ่มใหม่ + แก้ type)
@@ -117,34 +109,30 @@ export class CourseService {
 
   // 🔥 instructor dashboard
   async getInstructorDashboard(userId: string) {
-    const courses = await this.getMyCourses(userId);
+    const courses = await this.prisma.course.findMany({
+      where: {
+        instructorId: userId,
+      },
+      include: {
+        reviews: true,
+        enrolledCourses: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    let totalRevenue = 0;
+    const totalRevenue = await this.prisma.course.aggregate({
+      _count: true,
+    });
+
+    console.log('Total courses:', totalRevenue._count);
+
     let totalSales = 0;
 
     const courseStats = courses.map((course) => {
-      const paidItems = course.cartItems.filter(
-        (item) => item.cart.payment?.status === 'SUCCESS',
-      );
+      const sales = course.enrolledCourses.length;
+      const revenue = sales * Number(course.price);
 
-      const uniquePayments = new Map<string, number>();
-
-      paidItems.forEach((item) => {
-        const payment = item.cart.payment;
-
-        if (payment) {
-          uniquePayments.set(payment.id, Number(payment.amount));
-        }
-      });
-
-      const revenue = Array.from(uniquePayments.values()).reduce(
-        (sum, val) => sum + val,
-        0,
-      );
-
-      const sales = uniquePayments.size;
-
-      totalRevenue += revenue;
+      // totalRevenue += revenue;
       totalSales += sales;
 
       return {
@@ -152,6 +140,7 @@ export class CourseService {
         courseName: course.courseName,
         sales,
         revenue,
+        students: sales,
 
         rating:
           course.reviews.length > 0

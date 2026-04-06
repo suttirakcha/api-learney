@@ -28,4 +28,13 @@ export class UsersService {
     });
     return user;
   }
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+  async updatePassword(id: string, password: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { password },
+    });
+  }
 }

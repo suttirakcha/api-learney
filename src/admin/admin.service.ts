@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { PaymentStatus, Status } from 'src/database/generated/prisma/enums';
+import { getMockTransactionCount } from '../payment/payment.utils';
 
 @Injectable()
 export class AdminService {
@@ -83,9 +84,22 @@ export class AdminService {
 
     const totalRevenue = Number(revenue._sum.amount || 0);
 
-    const totalSales = await this.prisma.payment.count({
+    const successfulPayments = await this.prisma.payment.findMany({
       where: { status: PaymentStatus.SUCCESS },
+      select: {
+        evidence: true,
+        amount: true,
+      },
     });
+    const totalSales = successfulPayments.reduce((sum, payment) => {
+      return (
+        sum +
+        getMockTransactionCount(
+          payment.evidence,
+          Number(payment.amount) > 0 ? 1 : 0,
+        )
+      );
+    }, 0);
 
     const totalCourses = await this.prisma.course.count({
       where: { status: Status.ACTIVE },
@@ -107,40 +121,13 @@ export class AdminService {
       where: { status: Status.ACTIVE },
       include: {
         reviews: true,
-        cartItems: {
-          include: {
-            cart: {
-              include: {
-                payment: true,
-              },
-            },
-          },
-        },
+        enrolledCourses: true,
       },
     });
 
     return courses.map((course) => {
-      const paidItems = course.cartItems.filter(
-        (item) => item.cart.payment?.status === PaymentStatus.SUCCESS,
-      );
-
-      // ✅ กัน payment ซ้ำ (สำคัญมาก)
-      const uniquePayments = new Map<string, number>();
-
-      paidItems.forEach((item) => {
-        const payment = item.cart.payment;
-
-        if (payment && payment.status === PaymentStatus.SUCCESS) {
-          uniquePayments.set(payment.id, Number(payment.amount));
-        }
-      });
-
-      const revenue = Array.from(uniquePayments.values()).reduce(
-        (sum, amount) => sum + amount,
-        0,
-      );
-
-      const sales = uniquePayments.size;
+      const sales = course.enrolledCourses.length;
+      const revenue = sales * Number(course.price);
 
       const rating =
         course.reviews.length > 0
