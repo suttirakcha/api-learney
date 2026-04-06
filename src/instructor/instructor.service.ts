@@ -36,7 +36,7 @@ export class InstructorService {
     // ===============================
     const payments = await this.prisma.payment.findMany({
       where: {
-        status: 'ACTIVE',
+        status: 'PENDING',
       },
       include: {
         cart: {
