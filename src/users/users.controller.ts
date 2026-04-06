@@ -24,7 +24,10 @@ export class UsersController {
 
   @Patch('me')
   @UseGuards(AuthGuard)
-  updateProfile(@Req() req: Request, @Body() updateProfileDto: UpdateProfileDto) {
+  updateProfile(
+    @Req() req: Request,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
     const user = req.user as JwtPayload;
     return this.usersService.updateProfile(user.sub, updateProfileDto);
   }

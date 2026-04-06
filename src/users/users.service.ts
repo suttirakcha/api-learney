@@ -32,6 +32,7 @@ export class UsersService {
       role: string;
       phone?: string | null;
       image?: string | null;
+      enrolledCourses?: { courseId: string }[];
     },
   ) {
     return {
@@ -41,6 +42,9 @@ export class UsersService {
       role: user.role,
       phone: user.phone ?? undefined,
       image: user.image ?? undefined,
+      enrolledCourses: user.enrolledCourses?.map(({ courseId }) => ({
+        courseId,
+      })),
     };
   }
 
@@ -76,7 +80,10 @@ export class UsersService {
       throw new BadRequestException('User not found');
     }
 
-    if (updateProfileDto.email && updateProfileDto.email !== existingUser.email) {
+    if (
+      updateProfileDto.email &&
+      updateProfileDto.email !== existingUser.email
+    ) {
       const emailInUse = await this.prisma.user.findUnique({
         where: { email: updateProfileDto.email },
       });
@@ -184,13 +191,18 @@ export class UsersService {
     successfulPayments.forEach((payment) => {
       const evidence = parsePaymentEvidence(payment.evidence);
       const fallbackDate = payment.updatedAt.toISOString();
-      const fallbackCourseIds = payment.cart.cartItems.map((item) => item.courseId);
+      const fallbackCourseIds = payment.cart.cartItems.map(
+        (item) => item.courseId,
+      );
 
       evidence.transactions.forEach((transaction) => {
         transaction.courseIds.forEach((courseId) => {
           const existingDate = purchaseDateByCourseId.get(courseId);
 
-          if (!existingDate || new Date(transaction.confirmedAt) > new Date(existingDate)) {
+          if (
+            !existingDate ||
+            new Date(transaction.confirmedAt) > new Date(existingDate)
+          ) {
             purchaseDateByCourseId.set(courseId, transaction.confirmedAt);
           }
         });
