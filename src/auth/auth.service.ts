@@ -77,7 +77,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     return {
-      user,
+      user: this.userService.toSafeUser(user),
       ...tokens,
     };
   }
@@ -87,6 +87,13 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { email },
+      include: {
+        enrolledCourses: {
+          select: {
+            courseId: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -102,7 +109,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     return {
-      user,
+      user: this.userService.toSafeUser(user),
       ...tokens,
     };
   }
