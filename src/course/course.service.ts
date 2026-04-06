@@ -59,7 +59,10 @@ export class CourseService {
 
     if (!course) return null;
 
-    return course;
+    return {
+      ...course,
+      instructor: course.instructor.fullname,
+    };
   }
 
   // 🔥 CREATE COURSE (เพิ่มใหม่ + แก้ type)
