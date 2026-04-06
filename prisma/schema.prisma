@@ -32,6 +32,12 @@ enum LessonType {
   DOCS
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 model User {
   id        String   @id @default(uuid())
   fullname  String
@@ -137,6 +143,8 @@ model Payment {
   cart Cart @relation(fields: [cartId], references: [id])
   user User @relation(fields: [userId], references: [id])
 }
+
+
 
 model Review {
   id         String   @id @default(uuid())

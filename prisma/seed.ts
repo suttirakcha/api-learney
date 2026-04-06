@@ -76,8 +76,6 @@ async function main() {
       tags: ['web', 'fullstack'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      willLearnMessages: ['You will learn how to develop websites'],
-      requirements: [],
     },
   });
 
@@ -93,8 +91,6 @@ async function main() {
       tags: ['react'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      willLearnMessages: ['Use React to Learn'],
-      requirements: ['One computer', 'One OS'],
     },
   });
 
@@ -110,8 +106,6 @@ async function main() {
       tags: ['design'],
       status: Status.ACTIVE,
       instructorId: instructor.id,
-      willLearnMessages: ['Design websites effectively'],
-      requirements: [],
     },
   });
 

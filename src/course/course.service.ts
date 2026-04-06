@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
-import {
-  PaymentStatus,
-  Prisma,
-  Status,
-} from '../database/generated/prisma/client';
+import { Prisma, Status } from '../database/generated/prisma/client';
 import { QueryCourseDto, CreateCourseDto } from './dtos/course.dto';
 
 // ✅ เพิ่มบรรทัดนี้
@@ -109,32 +105,23 @@ export class CourseService {
 
   // 🔥 instructor dashboard
   async getInstructorDashboard(userId: string) {
-    const courses = await this.getMyCourses(userId);
+    const courses = await this.prisma.course.findMany({
+      where: {
+        instructorId: userId,
+      },
+      include: {
+        reviews: true,
+        enrolledCourses: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
     let totalRevenue = 0;
     let totalSales = 0;
 
     const courseStats = courses.map((course) => {
-      const paidItems = course.cartItems.filter(
-        (item) => item.cart.payment?.status === PaymentStatus.SUCCESS,
-      );
-
-      const uniquePayments = new Map<string, number>();
-
-      paidItems.forEach((item) => {
-        const payment = item.cart.payment;
-
-        if (payment) {
-          uniquePayments.set(payment.id, Number(payment.amount));
-        }
-      });
-
-      const revenue = Array.from(uniquePayments.values()).reduce(
-        (sum, val) => sum + val,
-        0,
-      );
-
-      const sales = uniquePayments.size;
+      const sales = course.enrolledCourses.length;
+      const revenue = sales * Number(course.price);
 
       totalRevenue += revenue;
       totalSales += sales;
@@ -144,6 +131,7 @@ export class CourseService {
         courseName: course.courseName,
         sales,
         revenue,
+        students: sales,
 
         rating:
           course.reviews.length > 0

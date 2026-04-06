@@ -13,6 +13,7 @@ import { AdminModule } from './admin/admin.module';
 import { CourseModule } from './course/course.module';
 import { InstructorModule } from './instructor/instructor.module';
 import { UploadModule } from './upload/upload.module';
+import { PaymentModule } from './payment/payment.module';
 import { MailModule } from './mail/mail.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { MailModule } from './mail/mail.module';
     CourseModule,
     InstructorModule,
     UploadModule,
+    PaymentModule,
     MailModule,
   ],
   controllers: [],

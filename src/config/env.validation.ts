@@ -1,12 +1,31 @@
 import { Logger } from '@nestjs/common';
 import z from 'zod';
+
 const booleanFromEnv = z.preprocess((value) => {
   if (typeof value === 'string') return value.toLowerCase() === 'true';
   return value;
 }, z.boolean());
 
+const emptyStringToUndefined = (value: unknown) => {
+  if (typeof value !== 'string') return value;
+
+  const trimmed = value.trim();
+  return trimmed === '' ? undefined : trimmed;
+};
+
+const optionalEnvString = z.preprocess(
+  emptyStringToUndefined,
+  z.string().trim().min(1).optional(),
+);
+
+const optionalEnvUrl = z.preprocess(
+  emptyStringToUndefined,
+  z.string().trim().url().optional(),
+);
+
 const plainEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const displayNameEmailPattern = /^.+\s<[^<>\s@]+@[^\s@]+\.[^\s@]+>$/;
+
 const envSchema = z.object({
   PORT: z.coerce.number().int().min(0).max(65535),
   DATABASE_URL: z.url(),
@@ -16,10 +35,10 @@ const envSchema = z.object({
   CLOUD_NAME: z.string(),
   API_KEY: z.string(),
   API_SECRET: z.string(),
-  MAIL_HOST: z.string().min(1).optional(),
+  MAIL_HOST: optionalEnvString,
   MAIL_PORT: z.coerce.number().int().positive().default(587),
-  MAIL_USER: z.string().min(1).optional(),
-  MAIL_PASSWORD: z.string().min(1).optional(),
+  MAIL_USER: optionalEnvString,
+  MAIL_PASSWORD: optionalEnvString,
   MAIL_FROM: z
     .string()
     .trim()
@@ -38,10 +57,10 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(900),
-  FRONTEND_RESET_PASSWORD_URL: z
-    .string()
-    .url()
-    .default('http://localhost:3000/reset-password'),
+  FRONTEND_RESET_PASSWORD_URL: optionalEnvUrl.default(
+    'http://localhost:3000/reset-password',
+  ),
+  FRONTEND_URL: optionalEnvUrl.default('http://localhost:3000'),
 });
 
 export type EnvConfigType = z.infer<typeof envSchema>;

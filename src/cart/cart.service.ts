@@ -74,7 +74,6 @@ export class CartService {
       },
     });
   }
-
   async addItemToCart(userId: string, courseId: string) {
     const cart = await this.prisma.cart.upsert({
       where: { userId },
