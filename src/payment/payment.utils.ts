@@ -20,8 +20,8 @@ const normalizeSession = (
 
   const session = value as Record<string, unknown>;
   const courseIds = Array.isArray(session.courseIds)
-    ? session.courseIds.filter((courseId): courseId is string =>
-        typeof courseId === 'string',
+    ? session.courseIds.filter(
+        (courseId): courseId is string => typeof courseId === 'string',
       )
     : [];
 
@@ -56,8 +56,8 @@ const normalizeTransaction = (
 
   const transaction = value as Record<string, unknown>;
   const courseIds = Array.isArray(transaction.courseIds)
-    ? transaction.courseIds.filter((courseId): courseId is string =>
-        typeof courseId === 'string',
+    ? transaction.courseIds.filter(
+        (courseId): courseId is string => typeof courseId === 'string',
       )
     : [];
 

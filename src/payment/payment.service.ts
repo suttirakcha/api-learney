@@ -247,7 +247,8 @@ export class PaymentService {
 
     if (
       Math.abs(latestAmount - latestSession.amount) > 0.001 ||
-      latestCourseIds.join(',') !== [...latestSession.courseIds].sort().join(',')
+      latestCourseIds.join(',') !==
+        [...latestSession.courseIds].sort().join(',')
     ) {
       throw new BadRequestException(
         'Cart changed. Please create a new QR code before confirming payment.',

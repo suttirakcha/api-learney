@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
-import {
-  Prisma,
-  Status,
-} from '../database/generated/prisma/client';
+import { Prisma, Status } from '../database/generated/prisma/client';
 import { QueryCourseDto, CreateCourseDto } from './dtos/course.dto';
 
 // ✅ เพิ่มบรรทัดนี้
