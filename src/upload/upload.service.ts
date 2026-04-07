@@ -10,7 +10,8 @@ export class UploadService {
     return new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          resource_type: 'video',
+          upload_preset: process.env.UPLOAD_PRESET,
+          resource_type: 'auto',
         },
         (error: any, result: UploadApiResponse | undefined) => {
           if (result) resolve(result);

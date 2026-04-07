@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { jwtConfigOptions } from './auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from './config/config.module';
+import { LessonModule } from './lesson/lesson.module';
 import { CartModule } from './cart/cart.module';
 import { AdminModule } from './admin/admin.module';
 import { CourseModule } from './course/course.module';
@@ -23,6 +24,7 @@ import { MailModule } from './mail/mail.module';
     AuthModule,
     ConfigModule,
     JwtModule.registerAsync(jwtConfigOptions),
+    LessonModule,
     CartModule,
     AdminModule,
     CourseModule,

@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
-import { Prisma, Status } from '../database/generated/prisma/client';
+import {
+  PaymentStatus,
+  Prisma,
+  Status,
+} from '../database/generated/prisma/client';
 import { QueryCourseDto, CreateCourseDto } from './dtos/course.dto';
 
 // ✅ เพิ่มบรรทัดนี้
@@ -116,14 +120,19 @@ export class CourseService {
       orderBy: { createdAt: 'desc' },
     });
 
-    let totalRevenue = 0;
+    const totalRevenue = await this.prisma.course.aggregate({
+      _count: true,
+    });
+
+    console.log('Total courses:', totalRevenue._count);
+
     let totalSales = 0;
 
     const courseStats = courses.map((course) => {
       const sales = course.enrolledCourses.length;
       const revenue = sales * Number(course.price);
 
-      totalRevenue += revenue;
+      // totalRevenue += revenue;
       totalSales += sales;
 
       return {

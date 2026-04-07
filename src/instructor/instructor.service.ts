@@ -33,6 +33,26 @@ export class InstructorService {
     const totalCourses = courses.length;
 
     // ===============================
+    // ✅ 2. ดึง payments
+    // ===============================
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: 'PENDING',
+      },
+      include: {
+        cart: {
+          include: {
+            cartItems: {
+              include: {
+                course: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // ===============================
     // ✅ 3. เตรียม map (กำหนด type!)
     // ===============================
     const courseStatsMap = new Map<string, CourseStat>();
