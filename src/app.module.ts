@@ -16,6 +16,7 @@ import { InstructorModule } from './instructor/instructor.module';
 import { UploadModule } from './upload/upload.module';
 import { PaymentModule } from './payment/payment.module';
 import { MailModule } from './mail/mail.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { MailModule } from './mail/mail.module';
     UploadModule,
     PaymentModule,
     MailModule,
+    StatsModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],
