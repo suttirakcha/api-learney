@@ -56,14 +56,21 @@ export class CourseService {
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
-        instructor: true,
-        courseDetails: true,
+        instructor: {
+          select: { fullname: true },
+        },
+        courseDetails: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
     if (!course) return null;
 
-    return course;
+    return {
+      ...course,
+      instructor: course.instructor.fullname,
+    };
   }
 
   // 🔥 CREATE COURSE (เพิ่มใหม่ + แก้ type)
