@@ -1,19 +1,21 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { Trim } from '../../common/decorators/trim.decorator';
 
 export class UpdateProfileDto {
-  @IsOptional()
+  @Trim()
   @IsString()
-  fullname?: string;
+  fullname!: string;
 
-  @IsOptional()
-  @IsString()
-  @IsEmail({}, { message: 'Invalid email address' })
-  email?: string;
+  @Trim()
+  @IsEmail()
+  email!: string;
 
+  @Trim()
   @IsOptional()
   @IsString()
   phone?: string;
 
+  @Trim()
   @IsOptional()
   @IsString()
   image?: string;

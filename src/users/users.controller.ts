@@ -59,4 +59,25 @@ export class UsersController {
   createUser(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createUser(createUserDto);
   }
+
+  @Get('me/overview')
+  @UseGuards(AuthGuard)
+  getMyOverview(@Req() req: Request) {
+    const user = req.user as JwtPayload;
+    return this.usersService.getMyOverview(user.sub);
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  updateMyProfile(@Req() req: Request, @Body() dto: UpdateProfileDto) {
+    const user = req.user as JwtPayload;
+    return this.usersService.updateMyProfile(user.sub, dto);
+  }
+
+  @Patch('me/password')
+  @UseGuards(AuthGuard)
+  changeMyPassword(@Req() req: Request, @Body() dto: ChangePasswordDto) {
+    const user = req.user as JwtPayload;
+    return this.usersService.changeMyPassword(user.sub, dto);
+  }
 }

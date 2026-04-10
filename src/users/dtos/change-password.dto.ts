@@ -1,12 +1,15 @@
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { Trim } from '../../common/decorators/trim.decorator';
 
 export class ChangePasswordDto {
+  @Trim()
   @IsString()
-  @IsNotEmpty({ message: 'Current password is required' })
+  @IsNotEmpty()
   currentPassword!: string;
 
+  @Trim()
   @IsString()
-  @IsNotEmpty({ message: 'New password is required' })
-  @MinLength(6, { message: 'New password must be at least 6 characters' })
+  @MinLength(6)
+  @IsNotEmpty()
   newPassword!: string;
 }
