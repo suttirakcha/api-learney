@@ -4,11 +4,11 @@ import { Trim } from '../../common/decorators/trim.decorator';
 export class UpdateProfileDto {
   @Trim()
   @IsString()
-  fullname: string;
+  fullname!: string;
 
   @Trim()
   @IsEmail()
-  email: string;
+  email!: string;
 
   @Trim()
   @IsOptional()

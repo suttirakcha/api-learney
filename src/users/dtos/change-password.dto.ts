@@ -5,11 +5,11 @@ export class ChangePasswordDto {
   @Trim()
   @IsString()
   @IsNotEmpty()
-  currentPassword: string;
+  currentPassword!: string;
 
   @Trim()
   @IsString()
   @MinLength(6)
   @IsNotEmpty()
-  newPassword: string;
+  newPassword!: string;
 }
