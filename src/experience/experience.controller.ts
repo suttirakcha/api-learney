@@ -49,8 +49,13 @@ export class ExperienceController {
   }
 
   @Get('bootstrap')
-  getBootstrap() {
-    return this.experienceService.getBootstrap();
+  async getBootstrap() {
+    try {
+      return await this.experienceService.getBootstrap();
+    } catch (error) {
+      console.error('BOOTSTRAP CONTROLLER ERROR:', error);
+      throw error;
+    }
   }
 
   @Get('home')

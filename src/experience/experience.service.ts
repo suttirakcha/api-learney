@@ -248,35 +248,40 @@ export class ExperienceService {
   }
 
   async getBootstrap() {
-    const [activeTheme, categories] = await Promise.all([
-      this.getActiveTheme(),
-      this.prisma.category.findMany({
-        where: { visible: true },
-        orderBy: { order: 'asc' },
-        select: {
-          key: true,
-          slug: true,
-          name: true,
-          color: true,
-          icon: true,
-        },
-      }),
-    ]);
+    try {
+      const [activeTheme, categories] = await Promise.all([
+        this.getActiveTheme(),
+        this.prisma.category.findMany({
+          where: { visible: true },
+          orderBy: { order: 'asc' },
+        }),
+      ]);
 
-    return {
-      activeTheme: activeTheme
-        ? {
-            key: activeTheme.key,
-            name: this.parseLocalized(activeTheme.name, 'Theme'),
-            assets: activeTheme.assets,
-            previewMode: activeTheme.previewMode,
-          }
-        : null,
-      categories: categories.map((category) => ({
-        ...category,
-        name: this.parseLocalized(category.name, category.key),
-      })),
-    };
+      return {
+        activeTheme: activeTheme
+          ? {
+              key: activeTheme.key,
+              name: this.parseLocalized(activeTheme.name, 'Theme'),
+              assets: activeTheme.assets,
+              previewMode: activeTheme.previewMode,
+            }
+          : null,
+        categories: categories.map((category) => ({
+          key: category.key,
+          slug: category.slug,
+          name: this.parseLocalized(category.name, category.key),
+          icon: category.icon,
+          color: category.color,
+        })),
+      };
+    } catch (error) {
+      console.error('BOOTSTRAP SERVICE ERROR:', error);
+
+      return {
+        activeTheme: null,
+        categories: [],
+      };
+    }
   }
 
   async getHomePage() {
