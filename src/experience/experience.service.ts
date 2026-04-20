@@ -285,257 +285,314 @@ export class ExperienceService {
   }
 
   async getHomePage() {
-    const [
-      featured,
-      popularCourses,
-      categories,
-      reviews,
-      promotions,
-      activeTheme,
-    ] = await Promise.all([
-      this.prisma.homepageFeaturedCourse.findMany({
-        orderBy: { rank: 'asc' },
-        include: {
-          course: {
-            include: {
-              categoryRecord: true,
-              displayInstructor: true,
-              instructor: {
-                select: {
-                  id: true,
-                  fullname: true,
-                  image: true,
+    try {
+      const [
+        featured,
+        popularCourses,
+        categories,
+        reviews,
+        promotions,
+        activeTheme,
+      ] = await Promise.all([
+        this.prisma.homepageFeaturedCourse.findMany({
+          orderBy: { rank: 'asc' },
+          include: {
+            course: {
+              include: {
+                categoryRecord: true,
+                displayInstructor: true,
+                instructor: {
+                  select: {
+                    id: true,
+                    fullname: true,
+                    image: true,
+                  },
+                },
+                promotions: {
+                  include: {
+                    promotion: true,
+                  },
                 },
               },
-              promotions: {
-                include: {
-                  promotion: true,
-                },
-              },
             },
           },
-        },
-      }),
-      this.prisma.course.findMany({
-        where: {
-          ...publicCourseVisibility,
-          isPopular: true,
-        },
-        orderBy: [{ learnerCount: 'desc' }, { averageRating: 'desc' }],
-        take: 6,
-        include: {
-          categoryRecord: true,
-          displayInstructor: true,
-          instructor: {
-            select: {
-              id: true,
-              fullname: true,
-              image: true,
-            },
-          },
-          promotions: {
-            include: {
-              promotion: true,
-            },
-          },
-        },
-      }),
-      this.prisma.category.findMany({
-        where: { visible: true },
-        orderBy: { order: 'asc' },
-      }),
-      this.prisma.review.findMany({
-        where: {
-          visible: true,
-          moderationStatus: ModerationStatus.VISIBLE,
-        },
-        orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
-        take: 4,
-        include: {
-          course: {
-            select: {
-              slug: true,
-              courseName: true,
-              title: true,
-            },
-          },
-          user: {
-            select: {
-              fullname: true,
-              image: true,
-            },
-          },
-        },
-      }),
-      this.prisma.promotion.findMany({
-        where: { active: true },
-        orderBy: [{ endDate: 'asc' }, { createdAt: 'desc' }],
-        take: 4,
-      }),
-      this.getActiveTheme(),
-    ]);
-
-    const [userCount, courseCount, instructorCount, ratingAggregate] =
-      await Promise.all([
-        this.prisma.user.count({ where: { role: { not: 'ADMIN' } } }),
-        this.prisma.course.count({ where: publicCourseVisibility }),
-        this.prisma.instructorProfile.count({ where: { visible: true } }),
-        this.prisma.review.aggregate({
-          where: { visible: true },
-          _avg: { rating: true },
         }),
+        this.prisma.course.findMany({
+          where: {
+            ...publicCourseVisibility,
+            isPopular: true,
+          },
+          orderBy: [{ learnerCount: 'desc' }, { averageRating: 'desc' }],
+          take: 6,
+          include: {
+            categoryRecord: true,
+            displayInstructor: true,
+            instructor: {
+              select: {
+                id: true,
+                fullname: true,
+                image: true,
+              },
+            },
+            promotions: {
+              include: {
+                promotion: true,
+              },
+            },
+          },
+        }),
+        this.prisma.category.findMany({
+          where: { visible: true },
+          orderBy: { order: 'asc' },
+        }),
+        this.prisma.review.findMany({
+          where: {
+            visible: true,
+            moderationStatus: ModerationStatus.VISIBLE,
+          },
+          orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
+          take: 4,
+          include: {
+            course: {
+              select: {
+                slug: true,
+                courseName: true,
+                title: true,
+              },
+            },
+            user: {
+              select: {
+                fullname: true,
+                image: true,
+              },
+            },
+          },
+        }),
+        this.prisma.promotion.findMany({
+          where: { active: true },
+          orderBy: [{ endDate: 'asc' }, { createdAt: 'desc' }],
+          take: 4,
+        }),
+        this.getActiveTheme(),
       ]);
 
-    const audienceSections = [
-      {
-        key: 'ai-for-work',
-        title: this.parseLocalized('AI for Work', 'AI for Work'),
-        description: this.parseLocalized(
-          'อัปสกิลงานประจำให้เร็วขึ้น ชัดขึ้น และเหนื่อยน้อยลง',
-          'Upgrade daily work with clearer, faster workflows.',
-        ),
-        courseSlugs: [
-          'ai-work-automation-bootcamp',
-          'career-communication-confidence',
-        ],
-      },
-      {
-        key: 'ai-for-business',
-        title: this.parseLocalized('AI for Business', 'AI for Business'),
-        description: this.parseLocalized(
-          'ใช้ AI ช่วยคิด วางแผน และขยายธุรกิจอย่างมีระบบ',
-          'Use AI to plan, operate, and scale with better systems.',
-        ),
-        courseSlugs: ['founder-ai-playbook', 'ai-team-leadership-draft'],
-      },
-      {
-        key: 'ai-for-creators',
-        title: this.parseLocalized('AI for Creators', 'AI for Creators'),
-        description: this.parseLocalized(
-          'สร้างคอนเทนต์คุณภาพสูงแบบยังคงตัวตนของคุณ',
-          'Create better content while keeping your voice intact.',
-        ),
-        courseSlugs: ['creator-ai-content-studio', 'ai-marketing-strategy-lab'],
-      },
-      {
-        key: 'ai-for-students',
-        title: this.parseLocalized('AI for Students', 'AI for Students'),
-        description: this.parseLocalized(
-          'สร้างทักษะสำหรับอนาคตด้วยการเรียนที่เป็นมิตรและใช้ได้จริง',
-          'Build future-ready skills with warm, practical learning.',
-        ),
-        courseSlugs: [
-          'english-for-global-ai-teams',
-          'career-communication-confidence',
-        ],
-      },
-    ];
+      const [userCount, courseCount, instructorCount, ratingAggregate] =
+        await Promise.all([
+          this.prisma.user.count({ where: { role: { not: 'ADMIN' } } }),
+          this.prisma.course.count({ where: publicCourseVisibility }),
+          this.prisma.instructorProfile.count({ where: { visible: true } }),
+          this.prisma.review.aggregate({
+            where: { visible: true },
+            _avg: { rating: true },
+          }),
+        ]);
 
-    const cardLookup = new Map(
-      popularCourses.map((course) => [course.slug, this.courseToCard(course)]),
-    );
-
-    return {
-      hero: {
-        title: this.parseLocalized(
-          'เติบโตทักษะ AI ให้พร้อมสำหรับยุคดิจิทัล',
-          'Grow your AI skills for the digital era',
-        ),
-        subtitle: this.parseLocalized(
-          'คอร์สที่อบอุ่น ใช้งานได้จริง และออกแบบมาให้คุณก้าวไปข้างหน้าอย่างมั่นใจ',
-          'Warm, practical courses designed to help you move forward with confidence.',
-        ),
-        ctas: [
-          {
-            label: this.parseLocalized('สำรวจคอร์ส', 'Explore Courses'),
-            href: '/courses',
-          },
-          {
-            label: this.parseLocalized('ทำแบบทดสอบทักษะ', 'Take Skill Test'),
-            href: '/skill-test',
-          },
-          {
-            label: this.parseLocalized(
-              'ดูคอร์สยอดนิยม',
-              'View Popular Courses',
-            ),
-            href: '/courses?sort=most-popular',
-          },
-        ],
-      },
-      categories: categories.map((category) => ({
-        key: category.key,
-        slug: category.slug,
-        name: this.parseLocalized(category.name, category.key),
-        icon: category.icon,
-        color: category.color,
-      })),
-      audienceSections: audienceSections.map((section) => ({
-        ...section,
-        courses: section.courseSlugs
-          .map((slug) => cardLookup.get(slug))
-          .filter(Boolean),
-      })),
-      featuredCourses: featured.map((item) => ({
-        rank: item.rank,
-        badge: item.badge,
-        course: this.courseToCard(item.course),
-      })),
-      popularCourses: popularCourses.map((course) => this.courseToCard(course)),
-      promotions: promotions.map((promotion) => ({
-        id: promotion.id,
-        slug: promotion.slug,
-        title: this.parseLocalized(promotion.title, 'Promotion'),
-        description: this.parseLocalized(promotion.description, ''),
-        type: promotion.type,
-        banner: promotion.banner,
-        discount: promotion.discount,
-        promoCode: promotion.promoCode,
-        startDate: promotion.startDate.toISOString(),
-        endDate: promotion.endDate.toISOString(),
-      })),
-      reviews: reviews.map((review) => ({
-        id: review.id,
-        rating: review.rating,
-        content: review.content,
-        author: review.user?.fullname ?? 'Learney member',
-        avatar: review.user?.image,
-        course: {
-          slug: review.course.slug,
-          title: this.parseLocalized(
-            review.course.title,
-            review.course.courseName,
+      const audienceSections = [
+        {
+          key: 'ai-for-work',
+          title: this.parseLocalized('AI for Work', 'AI for Work'),
+          description: this.parseLocalized(
+            'อัปสกิลงานประจำให้เร็วขึ้น ชัดขึ้น และเหนื่อยน้อยลง',
+            'Upgrade daily work with clearer, faster workflows.',
           ),
+          courseSlugs: [
+            'ai-work-automation-bootcamp',
+            'career-communication-confidence',
+          ],
         },
-      })),
-      socialProof: {
-        students: userCount.toLocaleString(),
-        instructors: instructorCount.toLocaleString(),
-        courses: courseCount.toLocaleString(),
-        rating: (ratingAggregate._avg.rating ?? 4.8).toFixed(1),
-      },
-      benefits: [
-        this.parseLocalized(
-          'หลักสูตรคัดมาแล้วสำหรับอนาคตสาย AI',
-          'Curated AI-era curriculum',
+        {
+          key: 'ai-for-business',
+          title: this.parseLocalized('AI for Business', 'AI for Business'),
+          description: this.parseLocalized(
+            'ใช้ AI ช่วยคิด วางแผน และขยายธุรกิจอย่างมีระบบ',
+            'Use AI to plan, operate, and scale with better systems.',
+          ),
+          courseSlugs: ['founder-ai-playbook', 'ai-team-leadership-draft'],
+        },
+        {
+          key: 'ai-for-creators',
+          title: this.parseLocalized('AI for Creators', 'AI for Creators'),
+          description: this.parseLocalized(
+            'สร้างคอนเทนต์คุณภาพสูงแบบยังคงตัวตนของคุณ',
+            'Create better content while keeping your voice intact.',
+          ),
+          courseSlugs: [
+            'creator-ai-content-studio',
+            'ai-marketing-strategy-lab',
+          ],
+        },
+        {
+          key: 'ai-for-students',
+          title: this.parseLocalized('AI for Students', 'AI for Students'),
+          description: this.parseLocalized(
+            'สร้างทักษะสำหรับอนาคตด้วยการเรียนที่เป็นมิตรและใช้ได้จริง',
+            'Build future-ready skills with warm, practical learning.',
+          ),
+          courseSlugs: [
+            'english-for-global-ai-teams',
+            'career-communication-confidence',
+          ],
+        },
+      ];
+
+      const validPopularCourses = popularCourses.filter(
+        (course) => course && course.instructor,
+      );
+
+      const validFeatured = featured.filter((item) => item.course);
+
+      const cardLookup = new Map(
+        validPopularCourses
+          .filter((course) => course.slug)
+          .map((course) => [course.slug, this.courseToCard(course)]),
+      );
+      console.log('featured count =', featured.length);
+      console.log('popularCourses count =', popularCourses.length);
+      console.log('categories count =', categories.length);
+      console.log('reviews count =', reviews.length);
+      console.log('promotions count =', promotions.length);
+      console.log('activeTheme =', activeTheme);
+      return {
+        hero: {
+          title: this.parseLocalized(
+            'เติบโตทักษะ AI ให้พร้อมสำหรับยุคดิจิทัล',
+            'Grow your AI skills for the digital era',
+          ),
+          subtitle: this.parseLocalized(
+            'คอร์สที่อบอุ่น ใช้งานได้จริง และออกแบบมาให้คุณก้าวไปข้างหน้าอย่างมั่นใจ',
+            'Warm, practical courses designed to help you move forward with confidence.',
+          ),
+          ctas: [
+            {
+              label: this.parseLocalized('สำรวจคอร์ส', 'Explore Courses'),
+              href: '/courses',
+            },
+            {
+              label: this.parseLocalized('ทำแบบทดสอบทักษะ', 'Take Skill Test'),
+              href: '/skill-test',
+            },
+            {
+              label: this.parseLocalized(
+                'ดูคอร์สยอดนิยม',
+                'View Popular Courses',
+              ),
+              href: '/courses?sort=most-popular',
+            },
+          ],
+        },
+        categories: categories.map((category) => ({
+          key: category.key,
+          slug: category.slug,
+          name: this.parseLocalized(category.name, category.key),
+          icon: category.icon,
+          color: category.color,
+        })),
+        audienceSections: audienceSections.map((section) => ({
+          ...section,
+          courses: section.courseSlugs
+            .map((slug) => cardLookup.get(slug))
+            .filter(Boolean),
+        })),
+        featuredCourses: validFeatured.map((item) => ({
+          rank: item.rank,
+          badge: item.badge,
+          course: this.courseToCard(item.course),
+        })),
+        popularCourses: validPopularCourses.map((course) =>
+          this.courseToCard(course),
         ),
-        this.parseLocalized(
-          'มีแบบทดสอบก่อน-หลังเรียนให้เห็นพัฒนาการ',
-          'See your progress with pre/post assessment',
-        ),
-        this.parseLocalized(
-          'ชุมชนถามตอบที่อ่านง่ายและเป็นมิตร',
-          'A warm, readable community',
-        ),
-      ],
-      activeTheme: activeTheme
-        ? {
-            key: activeTheme.key,
-            name: this.parseLocalized(activeTheme.name, 'Theme'),
-            assets: activeTheme.assets,
-          }
-        : null,
-    };
+        promotions: promotions.map((promotion) => ({
+          id: promotion.id,
+          slug: promotion.slug,
+          title: this.parseLocalized(promotion.title, 'Promotion'),
+          description: this.parseLocalized(promotion.description, ''),
+          type: promotion.type,
+          banner: promotion.banner,
+          discount: promotion.discount,
+          promoCode: promotion.promoCode,
+          startDate: promotion.startDate.toISOString(),
+          endDate: promotion.endDate.toISOString(),
+        })),
+        reviews: reviews
+          .filter((review) => review.course)
+          .map((review) => ({
+            id: review.id,
+            rating: review.rating,
+            content: review.content,
+            author: review.user?.fullname ?? 'Learney member',
+            avatar: review.user?.image,
+            course: {
+              slug: review.course?.slug ?? review.id,
+              title: this.parseLocalized(
+                review.course?.title,
+                review.course?.courseName ?? 'Course',
+              ),
+            },
+          })),
+        socialProof: {
+          students: userCount.toLocaleString(),
+          instructors: instructorCount.toLocaleString(),
+          courses: courseCount.toLocaleString(),
+          rating: (ratingAggregate._avg.rating ?? 4.8).toFixed(1),
+        },
+        benefits: [
+          this.parseLocalized(
+            'หลักสูตรคัดมาแล้วสำหรับอนาคตสาย AI',
+            'Curated AI-era curriculum',
+          ),
+          this.parseLocalized(
+            'มีแบบทดสอบก่อน-หลังเรียนให้เห็นพัฒนาการ',
+            'See your progress with pre/post assessment',
+          ),
+          this.parseLocalized(
+            'ชุมชนถามตอบที่อ่านง่ายและเป็นมิตร',
+            'A warm, readable community',
+          ),
+        ],
+        activeTheme: activeTheme
+          ? {
+              key: activeTheme.key,
+              name: this.parseLocalized(activeTheme.name, 'Theme'),
+              assets: activeTheme.assets,
+            }
+          : null,
+      };
+    } catch (error) {
+      console.error('GET HOME PAGE ERROR:', error);
+
+      return {
+        hero: {
+          title: this.parseLocalized(
+            'เติบโตทักษะ AI ให้พร้อมสำหรับยุคดิจิทัล',
+            'Grow your AI skills for the digital era',
+          ),
+          subtitle: this.parseLocalized(
+            'คอร์สที่อบอุ่น ใช้งานได้จริง และออกแบบมาให้คุณก้าวไปข้างหน้าอย่างมั่นใจ',
+            'Warm, practical courses designed to help you move forward with confidence.',
+          ),
+          ctas: [
+            {
+              label: this.parseLocalized('สำรวจคอร์ส', 'Explore Courses'),
+              href: '/courses',
+            },
+          ],
+        },
+        categories: [],
+        audienceSections: [],
+        featuredCourses: [],
+        popularCourses: [],
+        promotions: [],
+        reviews: [],
+        socialProof: {
+          students: '0',
+          instructors: '0',
+          courses: '0',
+          rating: '0.0',
+        },
+        benefits: [],
+        activeTheme: null,
+      };
+    }
   }
 
   async getCatalog(query: CatalogQueryDto) {
