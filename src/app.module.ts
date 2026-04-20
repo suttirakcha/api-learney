@@ -19,6 +19,8 @@ import { MailModule } from './mail/mail.module';
 import { StatsModule } from './stats/stats.module';
 import { ExperienceModule } from './experience/experience.module';
 import { WorkspaceModule } from './workspace/workspace.module';
+import { CommunityModule } from './community/community.module';
+import { AssessmentModule } from './assessment/assessment.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { WorkspaceModule } from './workspace/workspace.module';
     StatsModule,
     ExperienceModule,
     WorkspaceModule,
+    CommunityModule,
+    AssessmentModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],

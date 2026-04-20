@@ -1581,10 +1581,10 @@ export class ExperienceService {
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.communityThread.count({ where: { userId } }),
-      this.prisma.careerAssessmentSession.findMany({
+      this.prisma.assessmentSession.findMany({
         where: { userId, status: 'COMPLETED' },
-        include: { result: true },
-        orderBy: { createdAt: 'desc' },
+        include: { result: true, stage: true },
+        orderBy: { completedAt: 'desc' },
       }),
     ]);
 
@@ -1701,9 +1701,10 @@ export class ExperienceService {
         .map((s) => ({
           id: s.result!.id,
           sessionId: s.id,
-          date: s.createdAt.toISOString(),
+          date: s.completedAt?.toISOString() || s.startedAt.toISOString(),
           summary: s.result!.aiSummary,
-          strengths: s.result!.strengths,
+          strengths:
+            (s.result!.topTraitsJson as any[])?.map((t) => t.traitCode) || [],
         })),
     };
   }
@@ -1880,9 +1881,88 @@ export class ExperienceService {
     };
   }
 
+  async getAdminCareerHistory() {
+    const allSessions = await this.prisma.assessmentSession.count();
+    const sessions = await this.prisma.assessmentSession.findMany({
+      where: {
+        status: 'COMPLETED',
+        result: { isNot: null },
+      },
+      include: {
+        user: { select: { fullname: true, email: true } },
+        stage: true,
+        result: true,
+      },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    const total = sessions.length;
+    const completionRate =
+      allSessions > 0 ? Math.round((total / allSessions) * 100) : 0;
+
+    const stageCounts = new Map<string, number>();
+    const careerCounts = new Map<string, number>();
+
+    sessions.forEach((s) => {
+      const stageTitle = s.stage?.titleTh || 'ไม่ระบุช่วงวัย';
+      stageCounts.set(stageTitle, (stageCounts.get(stageTitle) || 0) + 1);
+
+      const result = s.result;
+      if (result && result.careerMatchesJson) {
+        const matches = (result.careerMatchesJson as any).careers || [];
+        matches.forEach((c: any) => {
+          if (c.title) {
+            careerCounts.set(c.title, (careerCounts.get(c.title) || 0) + 1);
+          }
+        });
+      }
+    });
+
+    let popularStage = '-';
+    let maxStageCount = 0;
+    stageCounts.forEach((count, name) => {
+      if (count > maxStageCount) {
+        maxStageCount = count;
+        popularStage = name;
+      }
+    });
+
+    let topCareer = '-';
+    let maxCount = 0;
+    careerCounts.forEach((count, name) => {
+      if (count > maxCount) {
+        maxCount = count;
+        topCareer = name;
+      }
+    });
+
+    const items = sessions.map((session) => {
+      const result = session.result!;
+      const topTraits =
+        (result.topTraitsJson as any[])?.map((t) => t.traitCode) || [];
+      const careers =
+        (result.careerMatchesJson as any)?.careers?.map((c: any) => c.title) ||
+        [];
+
+      return {
+        id: result.id,
+        user: session.user
+          ? { fullname: session.user.fullname, email: session.user.email }
+          : null,
+        stageSlug: session.stage?.slug || 'unknown',
+        topStrengths: topTraits,
+        recommendedJobs: careers,
+        createdAt:
+          session.completedAt?.toISOString() || session.startedAt.toISOString(),
+      };
+    });
+
+    return { items, total, popularStage, topCareer, completionRate };
+  }
+
   async deleteAdminCareerHistoryRecord(resultId: string) {
     // ค้นหา session ID จาก result ID
-    const result = await this.prisma.careerAssessmentResult.findUnique({
+    const result = await this.prisma.assessmentResult.findUnique({
       where: { id: resultId },
       select: { sessionId: true },
     });
@@ -1892,7 +1972,7 @@ export class ExperienceService {
     }
 
     // ลบ session ซึ่งจะ cascade ไปลบ result และ answers ด้วย
-    await this.prisma.careerAssessmentSession.delete({
+    await this.prisma.assessmentSession.delete({
       where: { id: result.sessionId },
     });
 
@@ -2435,6 +2515,26 @@ export class ExperienceService {
           await this.prisma.communityReport.update({
             where: { id: String(payload.reportId) },
             data: { resolved: true },
+          });
+        }
+
+        if (dto.action === 'delete_thread') {
+          await this.prisma.communityThread.update({
+            where: { id: String(payload.threadId) },
+            data: {
+              moderationStatus: ModerationStatus.DELETED,
+              visible: false,
+            },
+          });
+        }
+
+        if (dto.action === 'delete_reply') {
+          await this.prisma.communityReply.update({
+            where: { id: String(payload.replyId) },
+            data: {
+              moderationStatus: ModerationStatus.DELETED,
+              visible: false,
+            },
           });
         }
 
