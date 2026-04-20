@@ -58,12 +58,14 @@ function inferCategoryKey(category: string) {
 }
 
 async function ensureBaseUsersAndCourses() {
-  const passwordHash = await bcrypt.hash('123456', 10);
+  const demoPassword = '123456';
+  const passwordHash = await bcrypt.hash(demoPassword, 10);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@test.com' },
     update: {
       fullname: 'Admin',
+      password: passwordHash,
       role: Role.ADMIN,
     },
     create: {
@@ -78,6 +80,7 @@ async function ensureBaseUsersAndCourses() {
     where: { email: 'instructor@test.com' },
     update: {
       fullname: 'Instructor A',
+      password: passwordHash,
       role: Role.INSTRUCTOR,
     },
     create: {
@@ -92,6 +95,7 @@ async function ensureBaseUsersAndCourses() {
     where: { email: 'student@test.com' },
     update: {
       fullname: 'Student User',
+      password: passwordHash,
       role: Role.USER,
     },
     create: {
@@ -626,6 +630,10 @@ async function main() {
   }
 
   console.log('✅ Experience bootstrap complete');
+  console.log('Demo credentials:');
+  console.log('  admin@test.com / 123456');
+  console.log('  instructor@test.com / 123456');
+  console.log('  student@test.com / 123456');
 }
 
 main()

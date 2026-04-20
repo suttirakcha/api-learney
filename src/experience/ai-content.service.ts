@@ -49,24 +49,52 @@ export class AiContentService {
         `${input.title} is designed for ${input.targetAudience} who want to ${input.learningGoal}.`,
       ),
       learningOutcomes: [
-        localized('กำหนดเป้าหมายการเรียนรู้ที่วัดผลได้', 'Define measurable learning outcomes.'),
-        localized('ออกแบบ workflow ที่ใช้ในสถานการณ์จริง', 'Design workflows for real scenarios.'),
-        localized('ประเมินผลก่อนและหลังเรียนได้อย่างชัดเจน', 'Measure progress before and after learning.'),
+        localized(
+          'กำหนดเป้าหมายการเรียนรู้ที่วัดผลได้',
+          'Define measurable learning outcomes.',
+        ),
+        localized(
+          'ออกแบบ workflow ที่ใช้ในสถานการณ์จริง',
+          'Design workflows for real scenarios.',
+        ),
+        localized(
+          'ประเมินผลก่อนและหลังเรียนได้อย่างชัดเจน',
+          'Measure progress before and after learning.',
+        ),
       ],
       modules: [
         localized('Foundation and mindset', 'Foundation and mindset'),
-        localized('Applied workflow and practice', 'Applied workflow and practice'),
-        localized('Case studies and final project', 'Case studies and final project'),
+        localized(
+          'Applied workflow and practice',
+          'Applied workflow and practice',
+        ),
+        localized(
+          'Case studies and final project',
+          'Case studies and final project',
+        ),
       ],
-      quizzes: ['Readiness check', 'Module reflection quiz', 'Final synthesis quiz'],
+      quizzes: [
+        'Readiness check',
+        'Module reflection quiz',
+        'Final synthesis quiz',
+      ],
       preTest: ['Confidence baseline', 'Current workflow audit'],
       postTest: ['Improvement check', 'Transfer to work plan'],
       assignments: [
-        localized('ออกแบบ mini system ของตัวเอง', 'Design your own mini-system'),
-        localized('สรุปการทดลองใช้งานจริง', 'Summarize a real usage experiment'),
+        localized(
+          'ออกแบบ mini system ของตัวเอง',
+          'Design your own mini-system',
+        ),
+        localized(
+          'สรุปการทดลองใช้งานจริง',
+          'Summarize a real usage experiment',
+        ),
       ],
       finalProjectIdeas: [
-        localized('นำเสนอ implementation plan 30 วัน', 'Present a 30-day implementation plan'),
+        localized(
+          'นำเสนอ implementation plan 30 วัน',
+          'Present a 30-day implementation plan',
+        ),
         localized('สร้าง playbook สำหรับทีม', 'Create a team playbook'),
       ],
     };
@@ -112,20 +140,30 @@ export class AiContentService {
       slideOutline: ['Context', 'Method', 'Example', 'Reflection'],
       worksheet: ['Prompt map', 'Decision checklist', 'Next-step notes'],
       keyTakeaways: ['Use reusable structures', 'Review quality before speed'],
-      examplesAndExercises: ['Warm-up scenario', 'Applied scenario', 'Stretch task'],
+      examplesAndExercises: [
+        'Warm-up scenario',
+        'Applied scenario',
+        'Stretch task',
+      ],
     };
   }
 
   generateVideoBundle(input: CourseGenerationInput) {
     return {
       videoScript: `${input.title} introduction, practical walkthrough, learner recap`,
-      sceneOutline: ['Hero problem', 'Tool walkthrough', 'Real example', 'Wrap-up'],
+      sceneOutline: [
+        'Hero problem',
+        'Tool walkthrough',
+        'Real example',
+        'Wrap-up',
+      ],
       subtitleDraft: [
         'Start with the problem',
         'Show the structure',
         'Pause for the learner task',
       ],
-      narrationDraft: 'Friendly, calm, and encouraging voiceover that keeps the learner moving.',
+      narrationDraft:
+        'Friendly, calm, and encouraging voiceover that keeps the learner moving.',
       storyboard: [
         'Scene 1: learner pain point',
         'Scene 2: workflow demo',
@@ -135,7 +173,12 @@ export class AiContentService {
         'ดูภาพรวมคอร์สในไม่กี่นาที แล้วเริ่มสร้าง skill set ใหม่ของคุณ',
         'See the course in minutes, then start building a new skill set.',
       ),
-      productionOptions: ['real-video', 'ai-voice', 'avatar-video', 'slide-video'],
+      productionOptions: [
+        'real-video',
+        'ai-voice',
+        'avatar-video',
+        'slide-video',
+      ],
     };
   }
 
@@ -145,7 +188,10 @@ export class AiContentService {
         `${input.category} team under deadline pressure`,
         'Small team trying to scale quality without adding headcount',
       ],
-      scenarioExercises: ['Before-and-after comparison', 'Role-based decision sprint'],
+      scenarioExercises: [
+        'Before-and-after comparison',
+        'Role-based decision sprint',
+      ],
       workshopTasks: ['Rewrite the brief', 'Improve the feedback loop'],
       beforeAfterExamples: ['Manual workflow -> AI-supported system'],
       roleBasedCases: ['Manager', 'Individual contributor', 'Creator lead'],
@@ -170,7 +216,10 @@ export class AiContentService {
     return {
       outdatedLessons: ['Intro examples', 'Older tool screenshots'],
       newTopics: ['AI governance basics', 'Workflow QA habits'],
-      updatedExamples: ['Regional case study', 'Cross-functional collaboration'],
+      updatedExamples: [
+        'Regional case study',
+        'Cross-functional collaboration',
+      ],
       aiTrendAdditions: ['Model evaluation mindset', 'Human review loops'],
       exerciseRefresh: ['Replace generic prompt tasks with role-based tasks'],
     };
@@ -181,11 +230,13 @@ export class AiContentService {
       recommendations: [
         {
           title: 'AI Sales Enablement Sprint',
-          reason: 'Strong overlap between communication, analysis, and buyer-facing workflows.',
+          reason:
+            'Strong overlap between communication, analysis, and buyer-facing workflows.',
         },
         {
           title: 'Prompting for Student Research',
-          reason: 'High demand from discovery-test usage and community discussion patterns.',
+          reason:
+            'High demand from discovery-test usage and community discussion patterns.',
         },
         {
           title: 'Creator Analytics with AI',

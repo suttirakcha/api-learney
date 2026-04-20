@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
@@ -26,7 +27,9 @@ export class RoleGuard implements CanActivate {
 
     const user = request.user as JwtPayload;
 
-    if (!user?.role) throw new Error('Role cannot used without authentication');
+    if (!user?.role) {
+      throw new UnauthorizedException('Authentication is required');
+    }
 
     if (!roles.includes(user.role)) {
       throw new ForbiddenException(

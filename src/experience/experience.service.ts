@@ -36,7 +36,11 @@ type LocalizedRecord = {
 const publicCourseVisibility: Prisma.CourseWhereInput = {
   OR: [
     { isPublished: true },
-    { workflowStatus: { in: [CourseWorkflowStatus.APPROVED, CourseWorkflowStatus.PUBLISHED] } },
+    {
+      workflowStatus: {
+        in: [CourseWorkflowStatus.APPROVED, CourseWorkflowStatus.PUBLISHED],
+      },
+    },
     { status: Status.ACTIVE },
   ],
 };
@@ -104,7 +108,8 @@ export class ExperienceService {
     if (course.displayInstructor?.visible !== false) {
       return {
         id: course.displayInstructor?.id ?? course.instructor.id,
-        name: course.displayInstructor?.displayName ?? course.instructor.fullname,
+        name:
+          course.displayInstructor?.displayName ?? course.instructor.fullname,
         image: course.displayInstructor?.image ?? course.instructor.image,
         bio: this.parseLocalized(course.displayInstructor?.bio, ''),
         headline: this.parseLocalized(course.displayInstructor?.headline, ''),
@@ -120,60 +125,58 @@ export class ExperienceService {
     };
   }
 
-  private courseToCard(
-    course: {
+  private courseToCard(course: {
+    id: string;
+    slug: string | null;
+    courseName: string;
+    title: unknown;
+    shortDescription: unknown;
+    localizedDescription: unknown;
+    description: string;
+    category: string;
+    level: string | null;
+    badge: string | null;
+    thumbnail: string;
+    coverImage: string | null;
+    previewThumbnail: string | null;
+    price: unknown;
+    discountPrice: unknown;
+    averageRating: unknown;
+    reviewCount: number;
+    learnerCount: number;
+    isPopular: boolean;
+    isFeatured: boolean;
+    workflowStatus: CourseWorkflowStatus;
+    sourceType: CourseSourceType;
+    promotions?: Array<{
+      promotion: {
+        active: boolean;
+        title: unknown;
+        type: PromotionType;
+        discount: number | null;
+        promoCode: string | null;
+      };
+    }>;
+    categoryRecord?: {
+      key: string;
+      slug: string;
+      name: unknown;
+      color: string | null;
+    } | null;
+    displayInstructor: null | {
       id: string;
-      slug: string | null;
-      courseName: string;
-      title: unknown;
-      shortDescription: unknown;
-      localizedDescription: unknown;
-      description: string;
-      category: string;
-      level: string | null;
-      badge: string | null;
-      thumbnail: string;
-      coverImage: string | null;
-      previewThumbnail: string | null;
-      price: unknown;
-      discountPrice: unknown;
-      averageRating: unknown;
-      reviewCount: number;
-      learnerCount: number;
-      isPopular: boolean;
-      isFeatured: boolean;
-      workflowStatus: CourseWorkflowStatus;
-      sourceType: CourseSourceType;
-      promotions?: Array<{
-        promotion: {
-          active: boolean;
-          title: unknown;
-          type: PromotionType;
-          discount: number | null;
-          promoCode: string | null;
-        };
-      }>;
-      categoryRecord?: {
-        key: string;
-        slug: string;
-        name: unknown;
-        color: string | null;
-      } | null;
-      displayInstructor: null | {
-        id: string;
-        displayName: string;
-        image: string | null;
-        bio: unknown;
-        headline: unknown;
-        visible: boolean;
-      };
-      instructor: {
-        id: string;
-        fullname: string;
-        image: string | null;
-      };
-    },
-  ) {
+      displayName: string;
+      image: string | null;
+      bio: unknown;
+      headline: unknown;
+      visible: boolean;
+    };
+    instructor: {
+      id: string;
+      fullname: string;
+      image: string | null;
+    };
+  }) {
     const activePromotion = course.promotions?.find(
       (entry) => entry.promotion.active,
     )?.promotion;
@@ -277,89 +280,95 @@ export class ExperienceService {
   }
 
   async getHomePage() {
-    const [featured, popularCourses, categories, reviews, promotions, activeTheme] =
-      await Promise.all([
-        this.prisma.homepageFeaturedCourse.findMany({
-          orderBy: { rank: 'asc' },
-          include: {
-            course: {
-              include: {
-                categoryRecord: true,
-                displayInstructor: true,
-                instructor: {
-                  select: {
-                    id: true,
-                    fullname: true,
-                    image: true,
-                  },
+    const [
+      featured,
+      popularCourses,
+      categories,
+      reviews,
+      promotions,
+      activeTheme,
+    ] = await Promise.all([
+      this.prisma.homepageFeaturedCourse.findMany({
+        orderBy: { rank: 'asc' },
+        include: {
+          course: {
+            include: {
+              categoryRecord: true,
+              displayInstructor: true,
+              instructor: {
+                select: {
+                  id: true,
+                  fullname: true,
+                  image: true,
                 },
-                promotions: {
-                  include: {
-                    promotion: true,
-                  },
+              },
+              promotions: {
+                include: {
+                  promotion: true,
                 },
               },
             },
           },
-        }),
-        this.prisma.course.findMany({
-          where: {
-            ...publicCourseVisibility,
-            isPopular: true,
-          },
-          orderBy: [{ learnerCount: 'desc' }, { averageRating: 'desc' }],
-          take: 6,
-          include: {
-            categoryRecord: true,
-            displayInstructor: true,
-            instructor: {
-              select: {
-                id: true,
-                fullname: true,
-                image: true,
-              },
-            },
-            promotions: {
-              include: {
-                promotion: true,
-              },
+        },
+      }),
+      this.prisma.course.findMany({
+        where: {
+          ...publicCourseVisibility,
+          isPopular: true,
+        },
+        orderBy: [{ learnerCount: 'desc' }, { averageRating: 'desc' }],
+        take: 6,
+        include: {
+          categoryRecord: true,
+          displayInstructor: true,
+          instructor: {
+            select: {
+              id: true,
+              fullname: true,
+              image: true,
             },
           },
-        }),
-        this.prisma.category.findMany({
-          where: { visible: true },
-          orderBy: { order: 'asc' },
-        }),
-        this.prisma.review.findMany({
-          where: {
-            visible: true,
-            moderationStatus: ModerationStatus.VISIBLE,
-          },
-          orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
-          take: 4,
-          include: {
-            course: {
-              select: {
-                slug: true,
-                courseName: true,
-                title: true,
-              },
-            },
-            user: {
-              select: {
-                fullname: true,
-                image: true,
-              },
+          promotions: {
+            include: {
+              promotion: true,
             },
           },
-        }),
-        this.prisma.promotion.findMany({
-          where: { active: true },
-          orderBy: [{ endDate: 'asc' }, { createdAt: 'desc' }],
-          take: 4,
-        }),
-        this.getActiveTheme(),
-      ]);
+        },
+      }),
+      this.prisma.category.findMany({
+        where: { visible: true },
+        orderBy: { order: 'asc' },
+      }),
+      this.prisma.review.findMany({
+        where: {
+          visible: true,
+          moderationStatus: ModerationStatus.VISIBLE,
+        },
+        orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
+        take: 4,
+        include: {
+          course: {
+            select: {
+              slug: true,
+              courseName: true,
+              title: true,
+            },
+          },
+          user: {
+            select: {
+              fullname: true,
+              image: true,
+            },
+          },
+        },
+      }),
+      this.prisma.promotion.findMany({
+        where: { active: true },
+        orderBy: [{ endDate: 'asc' }, { createdAt: 'desc' }],
+        take: 4,
+      }),
+      this.getActiveTheme(),
+    ]);
 
     const [userCount, courseCount, instructorCount, ratingAggregate] =
       await Promise.all([
@@ -410,7 +419,10 @@ export class ExperienceService {
           'สร้างทักษะสำหรับอนาคตด้วยการเรียนที่เป็นมิตรและใช้ได้จริง',
           'Build future-ready skills with warm, practical learning.',
         ),
-        courseSlugs: ['english-for-global-ai-teams', 'career-communication-confidence'],
+        courseSlugs: [
+          'english-for-global-ai-teams',
+          'career-communication-confidence',
+        ],
       },
     ];
 
@@ -429,9 +441,21 @@ export class ExperienceService {
           'Warm, practical courses designed to help you move forward with confidence.',
         ),
         ctas: [
-          { label: this.parseLocalized('สำรวจคอร์ส', 'Explore Courses'), href: '/courses' },
-          { label: this.parseLocalized('ทำแบบทดสอบทักษะ', 'Take Skill Test'), href: '/skill-test' },
-          { label: this.parseLocalized('ดูคอร์สยอดนิยม', 'View Popular Courses'), href: '/courses?sort=most-popular' },
+          {
+            label: this.parseLocalized('สำรวจคอร์ส', 'Explore Courses'),
+            href: '/courses',
+          },
+          {
+            label: this.parseLocalized('ทำแบบทดสอบทักษะ', 'Take Skill Test'),
+            href: '/skill-test',
+          },
+          {
+            label: this.parseLocalized(
+              'ดูคอร์สยอดนิยม',
+              'View Popular Courses',
+            ),
+            href: '/courses?sort=most-popular',
+          },
         ],
       },
       categories: categories.map((category) => ({
@@ -473,7 +497,10 @@ export class ExperienceService {
         avatar: review.user?.image,
         course: {
           slug: review.course.slug,
-          title: this.parseLocalized(review.course.title, review.course.courseName),
+          title: this.parseLocalized(
+            review.course.title,
+            review.course.courseName,
+          ),
         },
       })),
       socialProof: {
@@ -483,9 +510,18 @@ export class ExperienceService {
         rating: (ratingAggregate._avg.rating ?? 4.8).toFixed(1),
       },
       benefits: [
-        this.parseLocalized('หลักสูตรคัดมาแล้วสำหรับอนาคตสาย AI', 'Curated AI-era curriculum'),
-        this.parseLocalized('มีแบบทดสอบก่อน-หลังเรียนให้เห็นพัฒนาการ', 'See your progress with pre/post assessment'),
-        this.parseLocalized('ชุมชนถามตอบที่อ่านง่ายและเป็นมิตร', 'A warm, readable community'),
+        this.parseLocalized(
+          'หลักสูตรคัดมาแล้วสำหรับอนาคตสาย AI',
+          'Curated AI-era curriculum',
+        ),
+        this.parseLocalized(
+          'มีแบบทดสอบก่อน-หลังเรียนให้เห็นพัฒนาการ',
+          'See your progress with pre/post assessment',
+        ),
+        this.parseLocalized(
+          'ชุมชนถามตอบที่อ่านง่ายและเป็นมิตร',
+          'A warm, readable community',
+        ),
       ],
       activeTheme: activeTheme
         ? {
@@ -537,18 +573,25 @@ export class ExperienceService {
         }
 
         if (query.category) {
-          const categoryKey = course.categoryRecord?.slug ?? this.slugify(course.category);
+          const categoryKey =
+            course.categoryRecord?.slug ?? this.slugify(course.category);
           if (query.category !== categoryKey) {
             return false;
           }
         }
 
-        if (query.level && query.level !== 'all' && course.level !== query.level) {
+        if (
+          query.level &&
+          query.level !== 'all' &&
+          course.level !== query.level
+        ) {
           return false;
         }
 
         if (query.promotion === 'true') {
-          const hasPromotion = course.promotions.some((entry) => entry.promotion.active);
+          const hasPromotion = course.promotions.some(
+            (entry) => entry.promotion.active,
+          );
           if (!hasPromotion) {
             return false;
           }
@@ -562,11 +605,16 @@ export class ExperienceService {
         }
 
         if (query.price) {
-          const actualPrice = this.toNumber(course.discountPrice ?? course.price);
+          const actualPrice = this.toNumber(
+            course.discountPrice ?? course.price,
+          );
           if (query.price === 'under-5000' && actualPrice >= 5000) {
             return false;
           }
-          if (query.price === '5000-8000' && (actualPrice < 5000 || actualPrice > 8000)) {
+          if (
+            query.price === '5000-8000' &&
+            (actualPrice < 5000 || actualPrice > 8000)
+          ) {
             return false;
           }
           if (query.price === 'over-8000' && actualPrice <= 8000) {
@@ -575,7 +623,8 @@ export class ExperienceService {
         }
 
         if (query.instructor) {
-          const instructorName = this.getInstructorSummary(course).name.toLowerCase();
+          const instructorName =
+            this.getInstructorSummary(course).name.toLowerCase();
           if (!instructorName.includes(query.instructor.toLowerCase())) {
             return false;
           }
@@ -588,11 +637,19 @@ export class ExperienceService {
           case 'newest':
             return b.createdAt.getTime() - a.createdAt.getTime();
           case 'highest-rated':
-            return this.toNumber(b.averageRating) - this.toNumber(a.averageRating);
+            return (
+              this.toNumber(b.averageRating) - this.toNumber(a.averageRating)
+            );
           case 'price-low-to-high':
-            return this.toNumber(a.discountPrice ?? a.price) - this.toNumber(b.discountPrice ?? b.price);
+            return (
+              this.toNumber(a.discountPrice ?? a.price) -
+              this.toNumber(b.discountPrice ?? b.price)
+            );
           case 'price-high-to-low':
-            return this.toNumber(b.discountPrice ?? b.price) - this.toNumber(a.discountPrice ?? a.price);
+            return (
+              this.toNumber(b.discountPrice ?? b.price) -
+              this.toNumber(a.discountPrice ?? a.price)
+            );
           case 'most-popular':
           default:
             return b.learnerCount - a.learnerCount;
@@ -771,7 +828,11 @@ export class ExperienceService {
         previewThumbnail: course.previewThumbnail ?? course.thumbnail,
         willLearnMessages: course.willLearnMessages,
         requirements: course.requirements,
-        badges: [course.badge, course.isPopular ? 'Popular' : null, course.isFeatured ? 'Recommended' : null].filter(Boolean),
+        badges: [
+          course.badge,
+          course.isPopular ? 'Popular' : null,
+          course.isFeatured ? 'Recommended' : null,
+        ].filter(Boolean),
         modules: course.modules.map((module) => ({
           id: module.id,
           title: this.parseLocalized(module.title, 'Module'),
@@ -869,8 +930,12 @@ export class ExperienceService {
     return {
       highlights: {
         totalThreads: threads.length,
-        questions: threads.filter((thread) => thread.type === DiscussionType.QUESTION).length,
-        discussions: threads.filter((thread) => thread.type === DiscussionType.DISCUSSION).length,
+        questions: threads.filter(
+          (thread) => thread.type === DiscussionType.QUESTION,
+        ).length,
+        discussions: threads.filter(
+          (thread) => thread.type === DiscussionType.DISCUSSION,
+        ).length,
       },
       threads: threads.map((thread) => ({
         id: thread.id,
@@ -885,7 +950,10 @@ export class ExperienceService {
         course: thread.course
           ? {
               slug: thread.course.slug,
-              title: this.parseLocalized(thread.course.title, thread.course.courseName),
+              title: this.parseLocalized(
+                thread.course.title,
+                thread.course.courseName,
+              ),
             }
           : null,
         replies: thread.replies.map((reply) => ({
@@ -1050,7 +1118,9 @@ export class ExperienceService {
         promoCode: promotion.promoCode,
         active: promotion.active,
         themeKey: promotion.themeKey,
-        courses: promotion.courses.map((entry) => this.courseToCard(entry.course)),
+        courses: promotion.courses.map((entry) =>
+          this.courseToCard(entry.course),
+        ),
       })),
       featuredCampaigns: featuredCourses.map((entry) => ({
         rank: entry.rank,
@@ -1076,7 +1146,7 @@ export class ExperienceService {
     ]);
 
     const selectedTest = ageGroup
-      ? tests.find((test) => test.ageGroup === ageGroup) ?? tests[0]
+      ? (tests.find((test) => test.ageGroup === ageGroup) ?? tests[0])
       : null;
 
     return {
@@ -1092,7 +1162,10 @@ export class ExperienceService {
         stats: [
           { label: 'users', value: `${userCount.toLocaleString()}+` },
           { label: 'careers', value: `${careers.toLocaleString()}+` },
-          { label: 'courses', value: `${(await this.prisma.course.count({ where: publicCourseVisibility })).toLocaleString()}+` },
+          {
+            label: 'courses',
+            value: `${(await this.prisma.course.count({ where: publicCourseVisibility })).toLocaleString()}+`,
+          },
         ],
       },
       ageGroups: tests.map((test) => ({
@@ -1106,7 +1179,10 @@ export class ExperienceService {
         ? {
             id: selectedTest.id,
             ageGroup: selectedTest.ageGroup,
-            title: this.parseLocalized(selectedTest.title, selectedTest.ageGroup),
+            title: this.parseLocalized(
+              selectedTest.title,
+              selectedTest.ageGroup,
+            ),
             questions: selectedTest.questions.map((question) => ({
               id: question.id,
               category: question.category,
@@ -1150,7 +1226,9 @@ export class ExperienceService {
     const normalizedScores = Array.from(scoresByCategory.entries()).map(
       ([category, values]) => ({
         category,
-        score: Math.round(values.reduce((sum, value) => sum + value, 0) / values.length),
+        score: Math.round(
+          values.reduce((sum, value) => sum + value, 0) / values.length,
+        ),
       }),
     );
 
@@ -1170,7 +1248,8 @@ export class ExperienceService {
     const careerScores = new Map<string, number>();
     careerRules.forEach((rule) => {
       const categoryScore =
-        normalizedScores.find((score) => score.category === rule.skillCategory)?.score ?? 0;
+        normalizedScores.find((score) => score.category === rule.skillCategory)
+          ?.score ?? 0;
 
       if (categoryScore >= rule.threshold) {
         careerScores.set(
@@ -1264,8 +1343,12 @@ export class ExperienceService {
     const careerMatches = careers.map((career, index) => {
       const score = career.rules.reduce((total, rule) => {
         const categoryScore =
-          attempt.scores.find((item) => item.category === rule.skillCategory)?.score ?? 0;
-        return total + (categoryScore >= rule.threshold ? rule.weight * categoryScore : 0);
+          attempt.scores.find((item) => item.category === rule.skillCategory)
+            ?.score ?? 0;
+        return (
+          total +
+          (categoryScore >= rule.threshold ? rule.weight * categoryScore : 0)
+        );
       }, 0);
 
       return {
@@ -1276,7 +1359,10 @@ export class ExperienceService {
         image: career.image,
         salaryRange: career.salaryRange,
         requiredSkills: career.requiredSkills,
-        matchPercentage: Math.max(62, Math.min(98, score > 0 ? Math.round(score / 3) : 85 - index * 5)),
+        matchPercentage: Math.max(
+          62,
+          Math.min(98, score > 0 ? Math.round(score / 3) : 85 - index * 5),
+        ),
       };
     });
 
@@ -1312,7 +1398,8 @@ export class ExperienceService {
   }
 
   async getRecommendedCourses(attemptId: string) {
-    const { attempt, careerMatches } = await this.getCareerMatchesForAttempt(attemptId);
+    const { attempt, careerMatches } =
+      await this.getCareerMatchesForAttempt(attemptId);
     const careers = await this.prisma.career.findMany({
       where: { id: { in: careerMatches.map((career) => career.id) } },
       include: { rules: true },
@@ -1321,7 +1408,9 @@ export class ExperienceService {
     const recommendedCourseIds = new Set<string>();
     careers.forEach((career) =>
       career.rules.forEach((rule) =>
-        rule.recommendedCourseIds.forEach((courseId) => recommendedCourseIds.add(courseId)),
+        rule.recommendedCourseIds.forEach((courseId) =>
+          recommendedCourseIds.add(courseId),
+        ),
       ),
     );
 
@@ -1351,7 +1440,12 @@ export class ExperienceService {
       ...this.courseToCard(course),
       matchPercentage: Math.max(
         70,
-        96 - index * 4 + Math.round((attempt.scores[index % Math.max(attempt.scores.length, 1)]?.score ?? 80) / 20),
+        96 -
+          index * 4 +
+          Math.round(
+            (attempt.scores[index % Math.max(attempt.scores.length, 1)]
+              ?.score ?? 80) / 20,
+          ),
       ),
     }));
   }
@@ -1418,14 +1512,21 @@ export class ExperienceService {
     const progressChart = skillCategories.map((category) => ({
       category,
       before:
-        preAttempt?.scores.find((score) => score.category === category)?.score ?? 0,
+        preAttempt?.scores.find((score) => score.category === category)
+          ?.score ?? 0,
       after:
-        postAttempt?.scores.find((score) => score.category === category)?.score ??
-        discoveryAttempts[0]?.scores.find((score) => score.category === category)?.score ??
+        postAttempt?.scores.find((score) => score.category === category)
+          ?.score ??
+        discoveryAttempts[0]?.scores.find(
+          (score) => score.category === category,
+        )?.score ??
         0,
     }));
 
-    const streak = Math.max(3, Math.min(14, attempts.length * 2 + enrolledCourses.length));
+    const streak = Math.max(
+      3,
+      Math.min(14, attempts.length * 2 + enrolledCourses.length),
+    );
     const achievements = [
       {
         key: 'starter',
@@ -1462,23 +1563,40 @@ export class ExperienceService {
       achievements,
       checklist: [
         {
-          label: this.parseLocalized('ทำแบบทดสอบค้นหาศักยภาพ', 'Complete your discovery test'),
+          label: this.parseLocalized(
+            'ทำแบบทดสอบค้นหาศักยภาพ',
+            'Complete your discovery test',
+          ),
           done: discoveryAttempts.length > 0,
         },
         {
-          label: this.parseLocalized('เริ่มเรียนคอร์สแรก', 'Start your first course'),
+          label: this.parseLocalized(
+            'เริ่มเรียนคอร์สแรก',
+            'Start your first course',
+          ),
           done: enrolledCourses.length > 0,
         },
         {
-          label: this.parseLocalized('เปรียบเทียบผลก่อนและหลังเรียน', 'Compare pre/post growth'),
+          label: this.parseLocalized(
+            'เปรียบเทียบผลก่อนและหลังเรียน',
+            'Compare pre/post growth',
+          ),
           done: Boolean(preAttempt && postAttempt),
         },
       ],
       recommendedNextSteps: [
-        this.parseLocalized('กลับไปอัปเดต wishlist และเลือกคอร์สลำดับถัดไป', 'Refresh your wishlist and choose the next course.'),
-        this.parseLocalized('อ่าน discussion ล่าสุดเพื่อเก็บ use case ใหม่', 'Browse the latest discussions for new use cases.'),
+        this.parseLocalized(
+          'กลับไปอัปเดต wishlist และเลือกคอร์สลำดับถัดไป',
+          'Refresh your wishlist and choose the next course.',
+        ),
+        this.parseLocalized(
+          'อ่าน discussion ล่าสุดเพื่อเก็บ use case ใหม่',
+          'Browse the latest discussions for new use cases.',
+        ),
       ],
-      enrolledCourses: enrolledCourses.map((item) => this.courseToCard(item.course)),
+      enrolledCourses: enrolledCourses.map((item) =>
+        this.courseToCard(item.course),
+      ),
       recentDiscovery: discoveryAttempts[0]
         ? {
             id: discoveryAttempts[0].id,
@@ -1517,7 +1635,8 @@ export class ExperienceService {
     });
 
     return {
-      items: wishlist?.items.map((item) => this.courseToCard(item.course)) ?? [],
+      items:
+        wishlist?.items.map((item) => this.courseToCard(item.course)) ?? [],
     };
   }
 
@@ -1584,12 +1703,19 @@ export class ExperienceService {
           user: { select: { fullname: true } },
         },
       }),
-      this.prisma.promotion.findFirst({ where: { active: true }, orderBy: { endDate: 'asc' } }),
+      this.prisma.promotion.findFirst({
+        where: { active: true },
+        orderBy: { endDate: 'asc' },
+      }),
       this.getActiveTheme(),
       this.prisma.aiDraft.count({
         where: {
           status: {
-            in: [AiDraftStatus.AI_GENERATED, AiDraftStatus.ADMIN_REVIEW, AiDraftStatus.EDITED],
+            in: [
+              AiDraftStatus.AI_GENERATED,
+              AiDraftStatus.ADMIN_REVIEW,
+              AiDraftStatus.EDITED,
+            ],
           },
         },
       }),
@@ -1609,7 +1735,10 @@ export class ExperienceService {
         { label: 'published courses', value: publishedCourses },
         { label: 'popular courses', value: popularCourses },
         { label: 'total sales', value: this.toNumber(revenue._sum.amount) },
-        { label: 'engagement', value: communityReports + latestReviews.length + skillTestUsage },
+        {
+          label: 'engagement',
+          value: communityReports + latestReviews.length + skillTestUsage,
+        },
         { label: 'ai test usage', value: skillTestUsage },
       ],
       latestReviews: latestReviews.map((review) => ({
@@ -1617,7 +1746,10 @@ export class ExperienceService {
         rating: review.rating,
         content: review.content,
         author: review.user?.fullname ?? 'Learney member',
-        course: this.parseLocalized(review.course.title, review.course.courseName),
+        course: this.parseLocalized(
+          review.course.title,
+          review.course.courseName,
+        ),
       })),
       activePromotion: activePromotion
         ? {
@@ -1636,7 +1768,10 @@ export class ExperienceService {
       quickActions: [
         { label: 'Add Course', href: '/admin/ai-course-builder' },
         { label: 'Publish Promotion', href: '/admin/promotions' },
-        { label: 'Change Homepage Popular Courses', href: '/admin/popular-courses' },
+        {
+          label: 'Change Homepage Popular Courses',
+          href: '/admin/popular-courses',
+        },
         { label: 'Moderate Community', href: '/admin/community' },
         { label: 'Change Theme', href: '/admin/seasonal-themes' },
       ],
@@ -1663,7 +1798,9 @@ export class ExperienceService {
         };
       case 'fixed-categories':
         return {
-          items: await this.prisma.category.findMany({ orderBy: { order: 'asc' } }),
+          items: await this.prisma.category.findMany({
+            orderBy: { order: 'asc' },
+          }),
         };
       case 'instructors':
         return {
@@ -1824,7 +1961,11 @@ export class ExperienceService {
           items: await this.prisma.aiDraft.findMany({
             where: {
               status: {
-                in: [AiDraftStatus.AI_GENERATED, AiDraftStatus.ADMIN_REVIEW, AiDraftStatus.EDITED],
+                in: [
+                  AiDraftStatus.AI_GENERATED,
+                  AiDraftStatus.ADMIN_REVIEW,
+                  AiDraftStatus.EDITED,
+                ],
               },
             },
             include: {
@@ -1845,12 +1986,22 @@ export class ExperienceService {
     const categoryKey = String(payload.categoryKey ?? 'business');
     const targetAudience = String(payload.targetAudience ?? 'modern learners');
     const level = String(payload.level ?? 'Intermediate');
-    const learningGoal = String(payload.learningGoal ?? 'build a practical new skill');
-    const variantType = payload.variantType ? String(payload.variantType) : undefined;
-    const baseCourseId = payload.courseId ? String(payload.courseId) : undefined;
+    const learningGoal = String(
+      payload.learningGoal ?? 'build a practical new skill',
+    );
+    const variantType = payload.variantType
+      ? String(payload.variantType)
+      : undefined;
+    const baseCourseId = payload.courseId
+      ? String(payload.courseId)
+      : undefined;
     const category = await this.prisma.category.findFirst({
       where: {
-        OR: [{ key: categoryKey }, { slug: categoryKey }, { legacyName: categoryKey }],
+        OR: [
+          { key: categoryKey },
+          { slug: categoryKey },
+          { legacyName: categoryKey },
+        ],
       },
     });
 
@@ -1868,7 +2019,11 @@ export class ExperienceService {
       sourceTitle: course?.courseName,
     });
 
-    if (!course && (type === AiJobType.COURSE_BLUEPRINT || type === AiJobType.COURSE_EXPANSION)) {
+    if (
+      !course &&
+      (type === AiJobType.COURSE_BLUEPRINT ||
+        type === AiJobType.COURSE_EXPANSION)
+    ) {
       course = await this.prisma.course.create({
         data: {
           slug: `${this.slugify(title)}-${Date.now().toString().slice(-4)}`,
@@ -2020,7 +2175,9 @@ export class ExperienceService {
           await this.prisma.course.update({
             where: { id: courseId },
             data: {
-              workflowStatus: String(payload.workflowStatus) as CourseWorkflowStatus,
+              workflowStatus: String(
+                payload.workflowStatus,
+              ) as CourseWorkflowStatus,
             },
           });
         }
@@ -2185,7 +2342,9 @@ export class ExperienceService {
             discount: Number(payload.discount ?? 0),
             banner: String(payload.banner ?? ''),
             promoCode: String(payload.promoCode ?? ''),
-            startDate: new Date(String(payload.startDate ?? new Date().toISOString())),
+            startDate: new Date(
+              String(payload.startDate ?? new Date().toISOString()),
+            ),
             endDate: new Date(
               String(
                 payload.endDate ??
@@ -2258,7 +2417,8 @@ export class ExperienceService {
 
       case 'career-matching': {
         if (dto.action === 'save_career_rule') {
-          const ruleId = typeof payload.ruleId === 'string' ? payload.ruleId : '';
+          const ruleId =
+            typeof payload.ruleId === 'string' ? payload.ruleId : '';
           const data = {
             careerId: String(payload.careerId ?? ''),
             ageGroup: payload.ageGroup ? String(payload.ageGroup) : null,
@@ -2357,7 +2517,9 @@ export class ExperienceService {
           await this.prisma.aiDraft.update({
             where: { id: draftId },
             data: {
-              status: String(payload.status ?? AiDraftStatus.ADMIN_REVIEW) as AiDraftStatus,
+              status: String(
+                payload.status ?? AiDraftStatus.ADMIN_REVIEW,
+              ) as AiDraftStatus,
             },
           });
           return { message: 'Draft status updated' };
