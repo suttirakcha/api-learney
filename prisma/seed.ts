@@ -1,4 +1,4 @@
-import 'dotenv';
+import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
@@ -24,6 +24,12 @@ async function main() {
   await prisma.cart.deleteMany();
   await prisma.course.deleteMany();
   await prisma.user.deleteMany(); // 🔥 สำคัญ
+
+  // ล้างข้อมูล Career Assessment เก่า (ถ้ามี)
+  await prisma.careerAssessmentResult.deleteMany();
+  await prisma.careerAssessmentSession.deleteMany();
+  await prisma.careerAssessmentQuestion.deleteMany();
+  await prisma.career.deleteMany();
 
   // =========================
   // 🔐 hash password

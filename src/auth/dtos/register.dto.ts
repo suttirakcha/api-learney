@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsIn,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
   Validate,
@@ -10,6 +11,7 @@ import { Trim } from '../../common/decorators/trim.decorator';
 import { Match } from '../../common/validators/match.validator';
 
 export class RegisterDto {
+  @IsOptional()
   @IsIn(['USER', 'INSTRUCTOR'])
   role: 'USER' | 'INSTRUCTOR';
   @Trim()

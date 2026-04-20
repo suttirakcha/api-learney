@@ -17,6 +17,7 @@ import { UploadModule } from './upload/upload.module';
 import { PaymentModule } from './payment/payment.module';
 import { MailModule } from './mail/mail.module';
 import { StatsModule } from './stats/stats.module';
+import { ExperienceModule } from './experience/experience.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { StatsModule } from './stats/stats.module';
     PaymentModule,
     MailModule,
     StatsModule,
+    ExperienceModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],
