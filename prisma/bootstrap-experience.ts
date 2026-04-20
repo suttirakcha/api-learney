@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
   AiDraftStatus,
@@ -56,7 +57,134 @@ function inferCategoryKey(category: string) {
   return 'ai-digital-skills';
 }
 
+async function ensureBaseUsersAndCourses() {
+  const passwordHash = await bcrypt.hash('123456', 10);
+
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@test.com' },
+    update: {
+      fullname: 'Admin',
+      role: Role.ADMIN,
+    },
+    create: {
+      fullname: 'Admin',
+      email: 'admin@test.com',
+      password: passwordHash,
+      role: Role.ADMIN,
+    },
+  });
+
+  const instructor = await prisma.user.upsert({
+    where: { email: 'instructor@test.com' },
+    update: {
+      fullname: 'Instructor A',
+      role: Role.INSTRUCTOR,
+    },
+    create: {
+      fullname: 'Instructor A',
+      email: 'instructor@test.com',
+      password: passwordHash,
+      role: Role.INSTRUCTOR,
+    },
+  });
+
+  const student = await prisma.user.upsert({
+    where: { email: 'student@test.com' },
+    update: {
+      fullname: 'Student User',
+      role: Role.USER,
+    },
+    create: {
+      fullname: 'Student User',
+      email: 'student@test.com',
+      password: passwordHash,
+      role: Role.USER,
+    },
+  });
+
+  const existingCourses = await prisma.course.count();
+
+  if (existingCourses === 0) {
+    const sampleCourses = await Promise.all([
+      prisma.course.create({
+        data: {
+          courseName: 'AI for Work Foundations',
+          description: 'Build practical AI workflows for modern digital work.',
+          category: 'AI & Digital Skills',
+          thumbnail: 'https://placehold.co/1200x800/f7dfe5/4a3245?text=AI+FOR+WORK',
+          price: 2490,
+          discount: 490,
+          tags: ['ai', 'workflow', 'productivity'],
+          status: Status.ACTIVE,
+          instructorId: instructor.id,
+        },
+      }),
+      prisma.course.create({
+        data: {
+          courseName: 'Marketing with AI Systems',
+          description: 'Use AI to plan campaigns, analyze content, and improve output quality.',
+          category: 'Marketing',
+          thumbnail: 'https://placehold.co/1200x800/f9e8b7/4a3245?text=AI+MARKETING',
+          price: 2890,
+          discount: 590,
+          tags: ['marketing', 'campaigns', 'analytics'],
+          status: Status.ACTIVE,
+          instructorId: instructor.id,
+        },
+      }),
+      prisma.course.create({
+        data: {
+          courseName: 'Creator Toolkit for the AI Era',
+          description: 'Create better content systems with AI-assisted planning and production.',
+          category: 'Content Creator',
+          thumbnail: 'https://placehold.co/1200x800/ddd2fb/4a3245?text=AI+CREATOR',
+          price: 2190,
+          discount: 390,
+          tags: ['creator', 'content', 'ai'],
+          status: Status.ACTIVE,
+          instructorId: instructor.id,
+        },
+      }),
+    ]);
+
+    await prisma.enrolledCourse.create({
+      data: {
+        userId: student.id,
+        courseId: sampleCourses[0].id,
+      },
+    });
+
+    await prisma.review.createMany({
+      data: [
+        {
+          courseId: sampleCourses[0].id,
+          userId: student.id,
+          rating: 5,
+          content: 'ช่วยให้เห็นภาพการใช้ AI กับงานจริงชัดขึ้นมาก',
+        },
+        {
+          courseId: sampleCourses[1].id,
+          userId: student.id,
+          rating: 4,
+          content: 'นำไปต่อยอดกับแผนการตลาดได้เลย',
+        },
+        {
+          courseId: sampleCourses[2].id,
+          userId: student.id,
+          rating: 5,
+          content: 'โทนการสอนเป็นมิตรและใช้ได้จริง',
+        },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
+  return { admin, instructor, student };
+}
+
 async function main() {
+  await ensureBaseUsersAndCourses();
+
   const categories = new Map<string, string>();
 
   for (const [index, [key, legacyName, thaiName, icon, color]] of categorySeed.entries()) {
