@@ -144,6 +144,12 @@ export class ExperienceController {
     return this.experienceService.getDashboard(userId);
   }
 
+  @Delete('admin/assessments/career-history/:id')
+  @UseGuards(AuthGuard) // ควรมี RoleGuard สำหรับ ADMIN ด้วย
+  deleteAdminCareerHistory(@Param('id') id: string) {
+    return this.experienceService.deleteAdminCareerHistoryRecord(id);
+  }
+
   @Get('wishlist')
   @UseGuards(AuthGuard)
   getWishlist(@Req() req: Request) {

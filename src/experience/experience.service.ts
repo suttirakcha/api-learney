@@ -153,6 +153,7 @@ export class ExperienceService {
         active: boolean;
         title: unknown;
         type: PromotionType;
+        discountType?: unknown;
         discount: number | null;
         promoCode: string | null;
       };
@@ -177,9 +178,9 @@ export class ExperienceService {
       image: string | null;
     };
   }) {
-    const activePromotion = course.promotions?.find(
-      (entry) => entry.promotion.active,
-    )?.promotion;
+    const activePromotion = Array.isArray(course.promotions)
+      ? course.promotions.find((entry) => entry.promotion.active)?.promotion
+      : undefined;
 
     return {
       id: course.id,
@@ -227,6 +228,7 @@ export class ExperienceService {
         ? {
             title: this.parseLocalized(activePromotion.title, 'Promotion'),
             type: activePromotion.type,
+            discountType: activePromotion.discountType,
             discount: activePromotion.discount,
             promoCode: activePromotion.promoCode,
           }
@@ -501,17 +503,22 @@ export class ExperienceService {
         popularCourses: validPopularCourses.map((course) =>
           this.courseToCard(course),
         ),
-        promotions: promotions.map((promotion) => ({
+        promotions: (promotions || []).map((promotion) => ({
           id: promotion.id,
           slug: promotion.slug,
           title: this.parseLocalized(promotion.title, 'Promotion'),
           description: this.parseLocalized(promotion.description, ''),
           type: promotion.type,
+          discountType: (promotion as any).discountType,
           banner: promotion.banner,
           discount: promotion.discount,
           promoCode: promotion.promoCode,
-          startDate: promotion.startDate.toISOString(),
-          endDate: promotion.endDate.toISOString(),
+          startDate: promotion.startDate
+            ? new Date(promotion.startDate).toISOString()
+            : null,
+          endDate: promotion.endDate
+            ? new Date(promotion.endDate).toISOString()
+            : null,
         })),
         reviews: reviews
           .filter((review) => review.course)
@@ -652,7 +659,7 @@ export class ExperienceService {
 
         if (query.promotion === 'true') {
           const hasPromotion = course.promotions.some(
-            (entry) => entry.promotion.active,
+            (entry) => entry?.promotion?.active,
           );
           if (!hasPromotion) {
             return false;
@@ -1169,26 +1176,39 @@ export class ExperienceService {
             assets: activeTheme.assets,
           }
         : null,
-      promotions: promotions.map((promotion) => ({
+      promotions: (promotions || []).map((promotion) => ({
         id: promotion.id,
         slug: promotion.slug,
         title: this.parseLocalized(promotion.title, 'Promotion'),
         description: this.parseLocalized(promotion.description, ''),
         type: promotion.type,
+        discountType: (promotion as any).discountType,
         banner: promotion.banner,
         discount: promotion.discount,
         promoCode: promotion.promoCode,
+        startDate: promotion.startDate
+          ? new Date(promotion.startDate).toISOString()
+          : null,
+        endDate: promotion.endDate
+          ? new Date(promotion.endDate).toISOString()
+          : null,
         active: promotion.active,
         themeKey: promotion.themeKey,
-        courses: promotion.courses.map((entry) =>
-          this.courseToCard(entry.course),
-        ),
+        courses: Array.isArray(promotion.courses)
+          ? promotion.courses
+              .filter((entry) => entry && entry.course)
+              .map((entry) => this.courseToCard(entry.course))
+          : [],
       })),
-      featuredCampaigns: featuredCourses.map((entry) => ({
-        rank: entry.rank,
-        badge: entry.badge,
-        course: this.courseToCard(entry.course),
-      })),
+      featuredCampaigns: Array.isArray(featuredCourses)
+        ? featuredCourses
+            .filter((entry) => entry && entry.course)
+            .map((entry) => ({
+              rank: entry.rank,
+              badge: entry.badge,
+              course: this.courseToCard(entry.course),
+            }))
+        : [],
     };
   }
 
@@ -1513,49 +1533,60 @@ export class ExperienceService {
   }
 
   async getDashboard(userId: string) {
-    const [user, wishlist, enrolledCourses, attempts, communityCount] =
-      await Promise.all([
-        this.prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            id: true,
-            fullname: true,
-            role: true,
-            image: true,
-          },
-        }),
-        this.prisma.wishlist.findUnique({
-          where: { userId },
-          include: { items: true },
-        }),
-        this.prisma.enrolledCourse.findMany({
-          where: { userId },
-          include: {
-            course: {
-              include: {
-                categoryRecord: true,
-                displayInstructor: true,
-                instructor: {
-                  select: {
-                    id: true,
-                    fullname: true,
-                    image: true,
-                  },
+    const [
+      user,
+      wishlist,
+      enrolledCourses,
+      attempts,
+      communityCount,
+      careerSessions,
+    ] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          fullname: true,
+          role: true,
+          image: true,
+        },
+      }),
+      this.prisma.wishlist.findUnique({
+        where: { userId },
+        include: { items: true },
+      }),
+      this.prisma.enrolledCourse.findMany({
+        where: { userId },
+        include: {
+          course: {
+            include: {
+              categoryRecord: true,
+              displayInstructor: true,
+              instructor: {
+                select: {
+                  id: true,
+                  fullname: true,
+                  image: true,
                 },
-                promotions: {
-                  include: { promotion: true },
-                },
+              },
+              promotions: {
+                include: { promotion: true },
               },
             },
           },
-        }),
-        this.prisma.skillTestAttempt.findMany({
-          where: { userId },
-          include: { scores: true },
-          orderBy: { createdAt: 'desc' },
-        }),
-        this.prisma.communityThread.count({ where: { userId } }),
-      ]);
+        },
+      }),
+      this.prisma.skillTestAttempt.findMany({
+        where: { userId },
+        include: { scores: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.communityThread.count({ where: { userId } }),
+      this.prisma.careerAssessmentSession.findMany({
+        where: { userId, status: 'COMPLETED' },
+        include: { result: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -1665,6 +1696,15 @@ export class ExperienceService {
             summary: this.parseLocalized(discoveryAttempts[0].summary, ''),
           }
         : null,
+      careerHistory: careerSessions
+        .filter((s) => s.result)
+        .map((s) => ({
+          id: s.result!.id,
+          sessionId: s.id,
+          date: s.createdAt.toISOString(),
+          summary: s.result!.aiSummary,
+          strengths: s.result!.strengths,
+        })),
     };
   }
 
@@ -1838,6 +1878,25 @@ export class ExperienceService {
         { label: 'Change Theme', href: '/admin/seasonal-themes' },
       ],
     };
+  }
+
+  async deleteAdminCareerHistoryRecord(resultId: string) {
+    // ค้นหา session ID จาก result ID
+    const result = await this.prisma.careerAssessmentResult.findUnique({
+      where: { id: resultId },
+      select: { sessionId: true },
+    });
+
+    if (!result) {
+      throw new NotFoundException('ไม่พบผลประเมินที่ต้องการลบ');
+    }
+
+    // ลบ session ซึ่งจะ cascade ไปลบ result และ answers ด้วย
+    await this.prisma.careerAssessmentSession.delete({
+      where: { id: result.sessionId },
+    });
+
+    return { message: 'ลบประวัติผลประเมินสำเร็จ', id: resultId };
   }
 
   async getAdminSection(section: string) {
@@ -2396,22 +2455,38 @@ export class ExperienceService {
         if (dto.action === 'save_promotion') {
           const promotionId =
             typeof payload.promotionId === 'string' ? payload.promotionId : '';
+
+          const parseDateSafe = (val: unknown, fallback: number) => {
+            if (!val) return new Date(fallback);
+            const parsed = new Date(String(val));
+            return isNaN(parsed.getTime()) ? new Date(fallback) : parsed;
+          };
+
           const data = {
             slug: String(payload.slug ?? `promotion-${Date.now()}`),
             title: payload.title ?? { th: 'โปรโมชันใหม่', en: 'New Promotion' },
             description: payload.description ?? { th: '', en: '' },
             type: String(payload.type ?? 'FEATURED_CAMPAIGN') as PromotionType,
-            discount: Number(payload.discount ?? 0),
-            banner: String(payload.banner ?? ''),
-            promoCode: String(payload.promoCode ?? ''),
-            startDate: new Date(
-              String(payload.startDate ?? new Date().toISOString()),
-            ),
-            endDate: new Date(
-              String(
-                payload.endDate ??
-                  new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),
-              ),
+            discountType: String(payload.discountType ?? 'FIXED') as any,
+            discount: payload.discount ? Number(payload.discount) : null,
+            maxDiscountAmount: payload.maxDiscountAmount
+              ? Number(payload.maxDiscountAmount)
+              : null,
+            minOrderAmount: payload.minOrderAmount
+              ? Number(payload.minOrderAmount)
+              : null,
+            banner: payload.banner ? String(payload.banner) : null,
+            promoCode: payload.promoCode ? String(payload.promoCode) : null,
+            usageLimitTotal: payload.usageLimitTotal
+              ? Number(payload.usageLimitTotal)
+              : null,
+            usageLimitPerUser: payload.usageLimitPerUser
+              ? Number(payload.usageLimitPerUser)
+              : null,
+            startDate: parseDateSafe(payload.startDate, Date.now()),
+            endDate: parseDateSafe(
+              payload.endDate,
+              Date.now() + 1000 * 60 * 60 * 24 * 30,
             ),
             active: Boolean(payload.active),
             themeKey: payload.themeKey
@@ -2419,15 +2494,42 @@ export class ExperienceService {
               : null,
           };
 
+          const courseIds = Array.isArray(payload.courseIds)
+            ? payload.courseIds.map(String)
+            : undefined;
+
           if (promotionId) {
             await this.prisma.promotion.update({
               where: { id: promotionId },
               data,
             });
+
+            if (courseIds) {
+              await this.prisma.promotionCourse.deleteMany({
+                where: { promotionId: promotionId },
+              });
+              if (courseIds.length > 0) {
+                await this.prisma.promotionCourse.createMany({
+                  data: courseIds.map((cId) => ({
+                    promotionId: promotionId,
+                    courseId: cId,
+                  })),
+                });
+              }
+            }
           } else {
-            await this.prisma.promotion.create({
+            const newPromo = await this.prisma.promotion.create({
               data,
             });
+
+            if (courseIds && courseIds.length > 0) {
+              await this.prisma.promotionCourse.createMany({
+                data: courseIds.map((cId) => ({
+                  promotionId: newPromo.id,
+                  courseId: cId,
+                })),
+              });
+            }
           }
           return { message: 'Promotion saved' };
         }
