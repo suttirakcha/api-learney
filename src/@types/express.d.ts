@@ -6,6 +6,7 @@ declare module 'express' {
 
     cookies: {
       refreshToken?: string;
+      accessToken?: string;
     };
   }
 }

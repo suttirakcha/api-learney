@@ -30,18 +30,52 @@ export class UsersService {
       fullname: string;
       email: string;
       role: string;
+      roles?: string[];
+      permissions?: string[];
       phone?: string | null;
       image?: string | null;
+      preferredWorkspace?: string | null;
+      isActive?: boolean;
+      isSuspended?: boolean;
+      localePreference?: string | null;
       enrolledCourses?: { courseId: string }[];
+      instructorProfile?: {
+        id: string;
+        displayName: string;
+      } | null;
+      instructorApplications?: Array<{
+        id: string;
+        status: string;
+        displayName: string;
+        createdAt: Date;
+      }>;
     },
   ) {
+    const latestInstructorApplication = user.instructorApplications?.[0];
+
     return {
       id: user.id,
       fullname: user.fullname,
       email: user.email,
       role: user.role,
+      roles: user.roles ?? [user.role],
+      permissions: user.permissions ?? [],
       phone: user.phone ?? undefined,
       image: user.image ?? undefined,
+      preferredWorkspace:
+        user.preferredWorkspace ?? user.role ?? ('USER' as const),
+      isActive: user.isActive ?? true,
+      isSuspended: user.isSuspended ?? false,
+      localePreference: user.localePreference ?? 'TH',
+      instructorProfile: user.instructorProfile ?? undefined,
+      latestInstructorApplication: latestInstructorApplication
+        ? {
+            id: latestInstructorApplication.id,
+            status: latestInstructorApplication.status,
+            displayName: latestInstructorApplication.displayName,
+            createdAt: latestInstructorApplication.createdAt,
+          }
+        : undefined,
       enrolledCourses: user.enrolledCourses?.map(({ courseId }) => ({
         courseId,
       })),
@@ -57,10 +91,47 @@ export class UsersService {
         fullname: createUserDto.fullname,
         email: createUserDto.email,
         password: hashedPassword,
+        role: 'USER',
+        roles: ['USER'],
+        preferredWorkspace: 'USER',
       },
     });
     return user;
   }
+
+  async findByIdWithAccess(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        enrolledCourses: {
+          select: {
+            courseId: true,
+          },
+        },
+        instructorProfile: {
+          select: {
+            id: true,
+            displayName: true,
+          },
+        },
+        instructorApplications: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+          select: {
+            id: true,
+            status: true,
+            displayName: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return user ? this.toSafeUser(user) : null;
+  }
+
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
   }

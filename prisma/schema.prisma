@@ -14,6 +14,25 @@ enum Role {
   INSTRUCTOR
 }
 
+enum Permission {
+  MANAGE_USERS
+  MANAGE_INSTRUCTORS
+  APPROVE_INSTRUCTORS
+  MANAGE_COURSES
+  APPROVE_COURSES
+  MANAGE_PROMOTIONS
+  MANAGE_THEMES
+  REVIEW_CONTENT
+  APPROVE_AI_DRAFTS
+  MANAGE_SETTINGS
+  VIEW_ADMIN_ANALYTICS
+  VIEW_INSTRUCTOR_ANALYTICS
+  MANAGE_OWN_COURSES
+  MANAGE_OWN_PROFILE
+  VIEW_OWN_STUDENTS
+  MANAGE_OWN_QUIZZES
+}
+
 enum Status {
   DRAFT
   PENDING
@@ -39,11 +58,17 @@ enum LocaleCode {
 
 enum CourseWorkflowStatus {
   DRAFT
+  EDITING
+  SUBMITTED
+  PENDING_APPROVAL
+  NEEDS_REVISION
   AI_GENERATED
   ADMIN_REVIEW
   EDITED
   APPROVED
   PUBLISHED
+  REJECTED
+  SUSPENDED
 }
 
 enum CourseSourceType {
@@ -69,13 +94,148 @@ enum PromotionType {
   SEASONAL_SALE
   PROMO_CODE
   FEATURED_CAMPAIGN
+  PERCENTAGE_DISCOUNT
+  FIXED_AMOUNT_DISCOUNT
+  COUPON_CODE
+  BUY_ONE_GET_ONE
+  FIRST_USER_DISCOUNT
+  CATEGORY_PROMOTION
+  COURSE_PROMOTION
+  INSTRUCTOR_PROMOTION
+  SEASONAL_PROMOTION
 }
 
 enum SeasonalThemeKey {
   SONGKRAN
   NEW_YEAR
   VALENTINE
+  PRIDE
   HALLOWEEN
+  LOY_KRATHONG
+  CHRISTMAS
+  BACK_TO_SCHOOL
+  EXAM_PREP
+  AI_TECH
+}
+
+enum InstructorApplicationStatus {
+  PENDING
+  APPROVED
+  NEEDS_CHANGES
+  REJECTED
+}
+
+enum CourseReviewStatus {
+  SUBMITTED
+  PENDING_APPROVAL
+  NEEDS_REVISION
+  APPROVED
+  REJECTED
+}
+
+enum ReviewQueueContentType {
+  COURSE_DESCRIPTION
+  LESSON_CONTENT
+  THUMBNAIL
+  PREVIEW_VIDEO
+  COMMENT
+  REVIEW
+  COMMUNITY_POST
+  ATTACHMENT
+  AI_DRAFT
+}
+
+enum ReviewQueueStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+  REJECTED
+  NEEDS_CHANGES
+  DELETED
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SeasonalThemeActivationMode {
+  MANUAL
+  AUTOMATIC
+}
+
+enum PreviewVideoProvider {
+  YOUTUBE
+  VIMEO
+  FILE_URL
+  UPLOAD
+}
+
+enum SkillExercisePlacement {
+  BEFORE_LEARNING
+  AFTER_LEARNING
+  OPTIONAL
+}
+
+enum SkillExerciseStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum SkillQuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  MATCHING
+  ORDERING
+}
+
+enum SkillAttemptStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  EVALUATED
+}
+
+enum NotificationAudience {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+  SYSTEM
+}
+
+enum NotificationLevel {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum PlatformSettingSection {
+  GENERAL
+  SEO
+  LOCALIZATION
+  PAYMENT
+  COURSE
+  REVIEW
+  COMMUNITY
+  NOTIFICATION
+  AI
+  THEME
+  PROMOTION
+  HOMEPAGE
+  LEGAL
+}
+
+enum PromotionScopeType {
+  GLOBAL
+  COURSE
+  CATEGORY
+  INSTRUCTOR
 }
 
 enum AssessmentKind {
@@ -109,58 +269,121 @@ enum AiDraftStatus {
   PUBLISHED
 }
 
-enum CourseTestType { PRE_TEST, POST_TEST }
-enum CourseTestStatus { DRAFT, ACTIVE, INACTIVE, ARCHIVED }
-enum TestQuestionType { MULTIPLE_CHOICE, SHORT_ANSWER, SCENARIO, ORDERING, MATCHING, SELF_RATING }
-enum DifficultyLevel { EASY, MEDIUM, HARD }
-enum TestAttemptStatus { IN_PROGRESS, SUBMITTED, EVALUATED, CANCELLED }
-enum RecommendationType { LESSON, COURSE, SKILL_PATH, CAREER_HINT }
+enum CourseTestType {
+  PRE_TEST
+  POST_TEST
+}
+
+enum CourseTestStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum TestQuestionType {
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+  SCENARIO
+  ORDERING
+  MATCHING
+  SELF_RATING
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum TestAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EVALUATED
+  CANCELLED
+}
+
+enum RecommendationType {
+  LESSON
+  COURSE
+  SKILL_PATH
+  CAREER_HINT
+}
 
 model User {
-  id               String      @id @default(uuid())
-  fullname         String
-  email            String      @unique
-  password         String
-  role             Role        @default(USER)
-  phone            String?
-  image            String?
-  localePreference LocaleCode? @default(TH)
-  themePreference  String?
-  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+  id                 String       @id @default(uuid())
+  fullname           String
+  email              String       @unique
+  password           String
+  role               Role         @default(USER)
+  roles              Role[]       @default([USER])
+  permissions        Permission[] @default([])
+  phone              String?
+  image              String?
+  localePreference   LocaleCode?  @default(TH)
+  themePreference    String?
+  preferredWorkspace Role?        @default(USER)
+  isActive           Boolean      @default(true)
+  isSuspended        Boolean      @default(false)
+  lastLoginAt        DateTime?    @db.Timestamptz()
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
 
-  carts             Cart[]
-  courses           Course[]          @relation("InstructorCourses")
-  payments          Payment[]
-  enrolledCourses   EnrolledCourse[]
-  wishlist          Wishlist?
-  reviews           Review[]
-  communityThreads  CommunityThread[]
-  communityReplies  CommunityReply[]
-  communityReports  CommunityReport[]
-  skillTestAttempts SkillTestAttempt[]
-  aiJobs            AiGenerationJob[] @relation("AiJobsCreator")
-  aiDraftsEdited    AiDraft[]         @relation("AiDraftEditor")
-  aiDraftApprovals  AiDraft[]         @relation("AiDraftApprover")
-  instructorProfile InstructorProfile?
-  testAttempts      TestAttempt[]
-  careerSessions    CareerAssessmentSession[]
+  carts                          Cart[]
+  courses                        Course[]                  @relation("InstructorCourses")
+  approvedCourses                Course[]                  @relation("CourseApprovedBy")
+  payments                       Payment[]
+  enrolledCourses                EnrolledCourse[]
+  wishlist                       Wishlist?
+  reviews                        Review[]
+  communityThreads               CommunityThread[]
+  communityReplies               CommunityReply[]
+  communityReports               CommunityReport[]
+  skillTestAttempts              SkillTestAttempt[]
+  aiJobs                         AiGenerationJob[]         @relation("AiJobsCreator")
+  aiDraftsEdited                 AiDraft[]                 @relation("AiDraftEditor")
+  aiDraftApprovals               AiDraft[]                 @relation("AiDraftApprover")
+  aiDraftApprovalLogs            AiDraftApproval[]
+  instructorProfile              InstructorProfile?
+  instructorApplications         InstructorApplication[]   @relation("InstructorApplicationApplicant")
+  reviewedInstructorApplications InstructorApplication[]   @relation("InstructorApplicationReviewer")
+  testAttempts                   TestAttempt[]
+  careerSessions                 CareerAssessmentSession[]
+  courseReviewRequests           PendingCourseReview[]     @relation("CourseReviewInstructor")
+  courseReviewApprovals          PendingCourseReview[]     @relation("CourseReviewAdmin")
+  submittedContentReviews        ContentReviewQueue[]      @relation("ContentSubmittedBy")
+  reviewedContentReviews         ContentReviewQueue[]      @relation("ContentReviewedBy")
+  updatedPlatformSettings        PlatformSetting[]         @relation("PlatformSettingUpdatedBy")
+  previewVideosCreated           CoursePreviewVideo[]      @relation("PreviewVideoOwner")
+  skillExercisesOwned            SkillExercise[]           @relation("SkillExerciseOwner")
+  skillExerciseAttempts          SkillExerciseAttempt[]
+  adminAuditLogs                 AdminAuditLog[]           @relation("AdminAuditActor")
+  notifications                  NotificationLog[]         @relation("NotificationRecipient")
+  notificationActions            NotificationLog[]         @relation("NotificationActor")
+  promotionUsages                PromotionUsage[]
+  chatSessions                   ChatSession[]
 }
 
 model InstructorProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  displayName String
-  bio         Json?
-  image       String?
-  headline    Json?
-  visible     Boolean  @default(true)
-  specialties String[]
-  createdAt   DateTime @default(now()) @db.Timestamptz()
-  updatedAt   DateTime @updatedAt @db.Timestamptz()
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  displayName     String
+  bio             Json?
+  image           String?
+  headline        Json?
+  visible         Boolean  @default(true)
+  specialties     String[]
+  expertiseAreas  String[]
+  experienceYears Int?
+  portfolioUrl    String?
+  payoutAccount   String?
+  contactEmail    String?
+  createdAt       DateTime @default(now()) @db.Timestamptz()
+  updatedAt       DateTime @updatedAt @db.Timestamptz()
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  displayedCourses Course[] @relation("DisplayInstructor")
+  user             User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayedCourses Course[]                @relation("DisplayInstructor")
+  applications     InstructorApplication[]
 }
 
 model Category {
@@ -204,10 +427,20 @@ model Course {
   status               Status               @default(DRAFT)
   workflowStatus       CourseWorkflowStatus @default(DRAFT)
   sourceType           CourseSourceType     @default(MANUAL)
+  currentVersion       Int                  @default(1)
   isPopular            Boolean              @default(false)
   isFeatured           Boolean              @default(false)
   isPublished          Boolean              @default(false)
+  closedEnrollment     Boolean              @default(false)
+  hiddenFromCatalog    Boolean              @default(false)
+  certificateEnabled   Boolean              @default(false)
   publishedAt          DateTime?            @db.Timestamptz()
+  approvalRequestedAt  DateTime?            @db.Timestamptz()
+  lastSubmittedAt      DateTime?            @db.Timestamptz()
+  approvedAt           DateTime?            @db.Timestamptz()
+  approvedById         String?
+  rejectionReason      String?              @db.Text
+  revisionNotes        String?              @db.Text
   learnerCount         Int                  @default(0)
   reviewCount          Int                  @default(0)
   averageRating        Decimal?             @map("average_rating") @db.Decimal(3, 2)
@@ -215,31 +448,41 @@ model Course {
   language             LocaleCode?
   instructorId         String               @map("instructor_id")
   displayInstructorId  String?
+  targetAudience       String[]
+  seoTitle             String?
+  seoDescription       String?              @db.Text
   createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz()
   willLearnMessages    String[]
   requirements         String[]
 
-  instructor         User                  @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Cascade)
-  displayInstructor  InstructorProfile?    @relation("DisplayInstructor", fields: [displayInstructorId], references: [id], onDelete: SetNull)
-  categoryRecord     Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  courseDetails      CourseDetail[]
-  cartItems          CartItem[]
-  wishlistItems      WishlistItem[]
-  reviews            Review[]
-  enrolledCourses    EnrolledCourse[]
-  communityThreads   CommunityThread[]
-  promotions         PromotionCourse[]
-  featuredPlacement  HomepageFeaturedCourse?
-  courseAssessments  CourseAssessment[]
-  skillTestAttempts  SkillTestAttempt[]
-  modules            CourseModuleEntity[]
-  lessons            CourseLesson[]
-  aiJobs             AiGenerationJob[]
-  aiDrafts           AiDraft[]
-  courseTests        CourseTest[]
-  certificateRules   CourseCertificateRule?
-  recommendedIn      RecommendedCourseMapping[]
+  instructor            User                       @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Cascade)
+  approvedBy            User?                      @relation("CourseApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  displayInstructor     InstructorProfile?         @relation("DisplayInstructor", fields: [displayInstructorId], references: [id], onDelete: SetNull)
+  categoryRecord        Category?                  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  courseDetails         CourseDetail[]
+  cartItems             CartItem[]
+  wishlistItems         WishlistItem[]
+  reviews               Review[]
+  enrolledCourses       EnrolledCourse[]
+  communityThreads      CommunityThread[]
+  promotions            PromotionCourse[]
+  featuredPlacement     HomepageFeaturedCourse?
+  courseAssessments     CourseAssessment[]
+  skillTestAttempts     SkillTestAttempt[]
+  modules               CourseModuleEntity[]
+  lessons               CourseLesson[]
+  aiJobs                AiGenerationJob[]
+  aiDrafts              AiDraft[]
+  courseTests           CourseTest[]
+  certificateRules      CourseCertificateRule?
+  recommendedIn         RecommendedCourseMapping[]
+  previewVideos         CoursePreviewVideo[]
+  pendingReviews        PendingCourseReview[]
+  contentReviews        ContentReviewQueue[]
+  skillExercises        SkillExercise[]
+  promotionUsages       PromotionUsage[]
+  recommendationCourses RecommendationCourse[]
 }
 
 model CourseDetail {
@@ -264,31 +507,31 @@ model CourseModuleEntity {
   createdAt DateTime @default(now()) @db.Timestamptz()
   updatedAt DateTime @updatedAt @db.Timestamptz()
 
-  course  Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons CourseLesson[]
 }
 
 model CourseLesson {
-  id               String    @id @default(uuid())
+  id               String   @id @default(uuid())
   courseId         String
   moduleId         String?
   title            Json?
   summary          Json?
   draftContent     Json?
-  instructorScript String?   @db.Text
+  instructorScript String?  @db.Text
   slideOutline     Json?
   worksheet        Json?
   keyTakeaways     Json?
   examples         Json?
   durationMinutes  Int?
   order            Int
-  published        Boolean   @default(false)
-  createdAt        DateTime  @default(now()) @db.Timestamptz()
-  updatedAt        DateTime  @updatedAt @db.Timestamptz()
+  published        Boolean  @default(false)
+  createdAt        DateTime @default(now()) @db.Timestamptz()
+  updatedAt        DateTime @updatedAt @db.Timestamptz()
 
-  course  Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  module  CourseModuleEntity? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  assets  LessonAsset[]
+  course Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module CourseModuleEntity? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  assets LessonAsset[]
 }
 
 model LessonAsset {
@@ -318,11 +561,11 @@ model EnrolledCourse {
 
 model Wishlist {
   id        String   @id @default(uuid())
-  userId     String   @unique
+  userId    String   @unique
   createdAt DateTime @default(now()) @db.Timestamptz()
   updatedAt DateTime @updatedAt @db.Timestamptz()
 
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   items WishlistItem[]
 }
 
@@ -339,17 +582,20 @@ model WishlistItem {
 }
 
 model Cart {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  total     Decimal
-  subtotal  Decimal
-  discount  Decimal?
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  appliedPromotionId   String?
+  appliedPromotionCode String?
+  total                Decimal
+  subtotal             Decimal
+  discount             Decimal?
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  user      User       @relation(fields: [userId], references: [id])
-  cartItems CartItem[]
-  payment   Payment?
+  user             User       @relation(fields: [userId], references: [id])
+  appliedPromotion Promotion? @relation(fields: [appliedPromotionId], references: [id], onDelete: SetNull)
+  cartItems        CartItem[]
+  payment          Payment?
 }
 
 model CartItem {
@@ -407,8 +653,8 @@ model CommunityThread {
   createdAt        DateTime         @default(now()) @db.Timestamptz()
   updatedAt        DateTime         @updatedAt @db.Timestamptz()
 
-  course  Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course  Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies CommunityReply[]
   reports CommunityReport[]
 }
@@ -431,11 +677,11 @@ model CommunityReply {
 
 model CommunityReport {
   id        String   @id @default(uuid())
-  threadId   String?
-  replyId    String?
-  userId     String
-  reason     String
-  resolved   Boolean  @default(false)
+  threadId  String?
+  replyId   String?
+  userId    String
+  reason    String
+  resolved  Boolean  @default(false)
   createdAt DateTime @default(now()) @db.Timestamptz()
   updatedAt DateTime @updatedAt @db.Timestamptz()
 
@@ -445,22 +691,35 @@ model CommunityReport {
 }
 
 model Promotion {
-  id          String         @id @default(uuid())
-  slug        String         @unique
-  title       Json
-  description Json?
-  type        PromotionType
-  discount    Int?
-  banner      String?
-  promoCode   String?
-  startDate   DateTime       @db.Timestamptz()
-  endDate     DateTime       @db.Timestamptz()
-  active      Boolean        @default(false)
-  themeKey    SeasonalThemeKey?
-  createdAt   DateTime       @default(now()) @db.Timestamptz()
-  updatedAt   DateTime       @updatedAt @db.Timestamptz()
+  id             String             @id @default(uuid())
+  slug           String             @unique
+  title          Json
+  description    Json?
+  type           PromotionType
+  discount       Int?
+  banner         String?
+  promoCode      String?
+  code           String?            @unique
+  discountAmount Decimal?           @db.Decimal(10, 2)
+  minimumSpend   Decimal?           @db.Decimal(10, 2)
+  usageLimit     Int?
+  perUserLimit   Int?
+  priority       Int                @default(0)
+  stackable      Boolean            @default(false)
+  scope          PromotionScopeType @default(GLOBAL)
+  categoryKeys   String[]
+  instructorIds  String[]
+  usageCount     Int                @default(0)
+  startDate      DateTime           @db.Timestamptz()
+  endDate        DateTime           @db.Timestamptz()
+  active         Boolean            @default(false)
+  themeKey       SeasonalThemeKey?
+  createdAt      DateTime           @default(now()) @db.Timestamptz()
+  updatedAt      DateTime           @updatedAt @db.Timestamptz()
 
+  carts   Cart[]
   courses PromotionCourse[]
+  usages  PromotionUsage[]
 }
 
 model PromotionCourse {
@@ -475,14 +734,30 @@ model PromotionCourse {
 }
 
 model SeasonalTheme {
-  id          String           @id @default(uuid())
-  key         SeasonalThemeKey @unique
-  name        Json
-  active      Boolean          @default(false)
-  previewMode Boolean          @default(false)
-  assets      Json?
-  createdAt   DateTime         @default(now()) @db.Timestamptz()
-  updatedAt   DateTime         @updatedAt @db.Timestamptz()
+  id                String                      @id @default(uuid())
+  key               SeasonalThemeKey            @unique
+  slug              String?                     @unique
+  name              Json
+  active            Boolean                     @default(false)
+  previewMode       Boolean                     @default(false)
+  assets            Json?
+  activationMode    SeasonalThemeActivationMode @default(MANUAL)
+  startDate         DateTime?                   @db.Timestamptz()
+  endDate           DateTime?                   @db.Timestamptz()
+  bannerUrl         String?
+  backgroundUrl     String?
+  iconUrl           String?
+  primaryColor      String?
+  secondaryColor    String?
+  typographyConfig  Json?
+  buttonStyleConfig Json?
+  cardStyleConfig   Json?
+  decorationConfig  Json?
+  pageTargets       String[]
+  lightConfig       Json?
+  darkConfig        Json?
+  createdAt         DateTime                    @default(now()) @db.Timestamptz()
+  updatedAt         DateTime                    @updatedAt @db.Timestamptz()
 }
 
 model HomepageFeaturedCourse {
@@ -507,7 +782,7 @@ model Career {
   createdAt      DateTime @default(now()) @db.Timestamptz()
   updatedAt      DateTime @updatedAt @db.Timestamptz()
 
-  rules CareerRule[]
+  rules         CareerRule[]
   recommendedIn RecommendedCareerMapping[]
   mappings      CareerMapping[]
 }
@@ -554,20 +829,20 @@ model SkillTestQuestion {
 }
 
 model SkillTestAttempt {
-  id               String            @id @default(uuid())
-  skillTestId      String?
-  userId           String?
-  guestToken       String?
-  courseId         String?
+  id                 String            @id @default(uuid())
+  skillTestId        String?
+  userId             String?
+  guestToken         String?
+  courseId           String?
   courseAssessmentId String?
-  ageGroup         String
-  sourceType       AttemptSourceType @default(DISCOVERY)
-  assessmentKind   AssessmentKind    @default(DISCOVERY)
-  answers          Json
-  summary          Json?
-  topCareerIds     String[]
-  createdAt        DateTime          @default(now()) @db.Timestamptz()
-  updatedAt        DateTime          @updatedAt @db.Timestamptz()
+  ageGroup           String
+  sourceType         AttemptSourceType @default(DISCOVERY)
+  assessmentKind     AssessmentKind    @default(DISCOVERY)
+  answers            Json
+  summary            Json?
+  topCareerIds       String[]
+  createdAt          DateTime          @default(now()) @db.Timestamptz()
+  updatedAt          DateTime          @updatedAt @db.Timestamptz()
 
   skillTest        SkillTest?        @relation(fields: [skillTestId], references: [id], onDelete: SetNull)
   user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -589,15 +864,15 @@ model SkillTestScore {
 
 model CourseAssessment {
   id          String         @id @default(uuid())
-  courseId     String
-  kind         AssessmentKind
-  title        Json
-  description  Json?
-  active       Boolean       @default(true)
-  createdAt    DateTime      @default(now()) @db.Timestamptz()
-  updatedAt    DateTime      @updatedAt @db.Timestamptz()
+  courseId    String
+  kind        AssessmentKind
+  title       Json
+  description Json?
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now()) @db.Timestamptz()
+  updatedAt   DateTime       @updatedAt @db.Timestamptz()
 
-  course    Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course    Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
   questions AssessmentQuestion[]
   attempts  SkillTestAttempt[]
 }
@@ -618,7 +893,7 @@ model AssessmentQuestion {
 }
 
 model AiGenerationJob {
-  id               String       @id @default(uuid())
+  id               String        @id @default(uuid())
   courseId         String?
   createdById      String
   type             AiJobType
@@ -626,8 +901,8 @@ model AiGenerationJob {
   sourceReferences Json?
   result           Json?
   status           AiDraftStatus @default(AI_GENERATED)
-  createdAt        DateTime     @default(now()) @db.Timestamptz()
-  updatedAt        DateTime     @updatedAt @db.Timestamptz()
+  createdAt        DateTime      @default(now()) @db.Timestamptz()
+  updatedAt        DateTime      @updatedAt @db.Timestamptz()
 
   course    Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
   createdBy User      @relation("AiJobsCreator", fields: [createdById], references: [id], onDelete: Cascade)
@@ -649,10 +924,11 @@ model AiDraft {
   createdAt    DateTime      @default(now()) @db.Timestamptz()
   updatedAt    DateTime      @updatedAt @db.Timestamptz()
 
-  course     Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  job        AiGenerationJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
-  editedBy   User?           @relation("AiDraftEditor", fields: [editedById], references: [id], onDelete: SetNull)
-  approvedBy User?           @relation("AiDraftApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  course     Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  job        AiGenerationJob?  @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  editedBy   User?             @relation("AiDraftEditor", fields: [editedById], references: [id], onDelete: SetNull)
+  approvedBy User?             @relation("AiDraftApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvals  AiDraftApproval[]
 }
 
 model AnalyticsSnapshot {
@@ -660,6 +936,243 @@ model AnalyticsSnapshot {
   snapshotType String
   payload      Json
   createdAt    DateTime @default(now()) @db.Timestamptz()
+}
+
+model DashboardStatSnapshot {
+  id         String   @id @default(uuid())
+  scope      String
+  payload    Json
+  capturedAt DateTime @default(now()) @db.Timestamptz()
+  createdAt  DateTime @default(now()) @db.Timestamptz()
+  updatedAt  DateTime @updatedAt @db.Timestamptz()
+}
+
+model InstructorApplication {
+  id                  String                      @id @default(uuid())
+  userId              String
+  instructorProfileId String?
+  displayName         String
+  shortBio            String                      @db.Text
+  expertise           String[]
+  teachingCategories  String[]
+  experienceYears     Int?
+  portfolioUrl        String?
+  payoutAccount       String?
+  contactChannel      String?
+  identityDocumentUrl String?
+  status              InstructorApplicationStatus @default(PENDING)
+  adminNotes          String?                     @db.Text
+  applicantNotes      String?                     @db.Text
+  reviewedById        String?
+  reviewedAt          DateTime?                   @db.Timestamptz()
+  createdAt           DateTime                    @default(now()) @db.Timestamptz()
+  updatedAt           DateTime                    @updatedAt @db.Timestamptz()
+
+  user              User               @relation("InstructorApplicationApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  instructorProfile InstructorProfile? @relation(fields: [instructorProfileId], references: [id], onDelete: SetNull)
+  reviewedBy        User?              @relation("InstructorApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+}
+
+model PendingCourseReview {
+  id                String             @id @default(uuid())
+  courseId          String
+  instructorId      String
+  reviewedById      String?
+  status            CourseReviewStatus @default(PENDING_APPROVAL)
+  version           Int                @default(1)
+  submissionReason  String?            @db.Text
+  instructorNotes   String?            @db.Text
+  adminNotes        String?            @db.Text
+  rejectionTemplate String?
+  latestPayload     Json?
+  lastSubmittedAt   DateTime?          @db.Timestamptz()
+  approvedAt        DateTime?          @db.Timestamptz()
+  reviewedAt        DateTime?          @db.Timestamptz()
+  createdAt         DateTime           @default(now()) @db.Timestamptz()
+  updatedAt         DateTime           @updatedAt @db.Timestamptz()
+
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor User   @relation("CourseReviewInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+  reviewedBy User?  @relation("CourseReviewAdmin", fields: [reviewedById], references: [id], onDelete: SetNull)
+}
+
+model ContentReviewQueue {
+  id            String                 @id @default(uuid())
+  contentType   ReviewQueueContentType
+  sourceModule  String
+  sourceId      String
+  courseId      String?
+  submittedById String?
+  reviewedById  String?
+  status        ReviewQueueStatus      @default(PENDING)
+  priority      PriorityLevel          @default(MEDIUM)
+  severity      String?
+  flagReasons   String[]
+  previewText   String?                @db.Text
+  beforeContent Json?
+  afterContent  Json?
+  reviewerNotes String?                @db.Text
+  reviewedAt    DateTime?              @db.Timestamptz()
+  createdAt     DateTime               @default(now()) @db.Timestamptz()
+  updatedAt     DateTime               @updatedAt @db.Timestamptz()
+
+  course      Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  submittedBy User?   @relation("ContentSubmittedBy", fields: [submittedById], references: [id], onDelete: SetNull)
+  reviewedBy  User?   @relation("ContentReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+}
+
+model AiDraftApproval {
+  id             String         @id @default(uuid())
+  draftId        String
+  reviewerId     String
+  previousStatus AiDraftStatus?
+  nextStatus     AiDraftStatus
+  notes          String?        @db.Text
+  snapshot       Json?
+  createdAt      DateTime       @default(now()) @db.Timestamptz()
+
+  draft    AiDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  reviewer User    @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+}
+
+model PlatformSetting {
+  id           String                 @id @default(uuid())
+  section      PlatformSettingSection
+  key          String                 @unique
+  label        String
+  description  String?                @db.Text
+  value        Json
+  defaultValue Json?
+  updatedById  String?
+  createdAt    DateTime               @default(now()) @db.Timestamptz()
+  updatedAt    DateTime               @updatedAt @db.Timestamptz()
+
+  updatedBy User? @relation("PlatformSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+model CoursePreviewVideo {
+  id              String               @id @default(uuid())
+  courseId        String
+  createdById     String?
+  provider        PreviewVideoProvider
+  title           String
+  description     String?              @db.Text
+  url             String
+  thumbnailUrl    String?
+  durationSeconds Int?
+  isFreePreview   Boolean              @default(true)
+  active          Boolean              @default(true)
+  createdAt       DateTime             @default(now()) @db.Timestamptz()
+  updatedAt       DateTime             @updatedAt @db.Timestamptz()
+
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy User?  @relation("PreviewVideoOwner", fields: [createdById], references: [id], onDelete: SetNull)
+}
+
+model SkillExercise {
+  id                 String                 @id @default(uuid())
+  courseId           String?
+  instructorId       String?
+  title              String
+  description        String                 @db.Text
+  category           String
+  difficulty         DifficultyLevel        @default(MEDIUM)
+  score              Int                    @default(100)
+  timeLimitMinutes   Int?
+  passingScore       Int                    @default(60)
+  randomizeQuestions Boolean                @default(false)
+  placement          SkillExercisePlacement @default(OPTIONAL)
+  status             SkillExerciseStatus    @default(DRAFT)
+  createdAt          DateTime               @default(now()) @db.Timestamptz()
+  updatedAt          DateTime               @updatedAt @db.Timestamptz()
+
+  course     Course?                @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  instructor User?                  @relation("SkillExerciseOwner", fields: [instructorId], references: [id], onDelete: SetNull)
+  questions  SkillQuestion[]
+  attempts   SkillExerciseAttempt[]
+}
+
+model SkillQuestion {
+  id          String            @id @default(uuid())
+  exerciseId  String
+  type        SkillQuestionType
+  prompt      String            @db.Text
+  options     Json?
+  answerKey   Json?
+  explanation String?           @db.Text
+  points      Int               @default(1)
+  order       Int               @default(0)
+  createdAt   DateTime          @default(now()) @db.Timestamptz()
+  updatedAt   DateTime          @updatedAt @db.Timestamptz()
+
+  exercise SkillExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model SkillExerciseAttempt {
+  id          String             @id @default(uuid())
+  exerciseId  String
+  userId      String
+  status      SkillAttemptStatus @default(IN_PROGRESS)
+  score       Int?
+  maxScore    Int?
+  passed      Boolean?
+  answers     Json?
+  feedback    Json?
+  startedAt   DateTime           @default(now()) @db.Timestamptz()
+  submittedAt DateTime?          @db.Timestamptz()
+  updatedAt   DateTime           @updatedAt @db.Timestamptz()
+
+  exercise SkillExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminAuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?
+  module       String
+  action       String
+  targetType   String
+  targetId     String?
+  message      String?  @db.Text
+  previousData Json?
+  nextData     Json?
+  createdAt    DateTime @default(now()) @db.Timestamptz()
+
+  actor User? @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+}
+
+model NotificationLog {
+  id          String               @id @default(uuid())
+  recipientId String?
+  actorId     String?
+  audience    NotificationAudience
+  level       NotificationLevel    @default(INFO)
+  title       String
+  body        String               @db.Text
+  link        String?
+  metadata    Json?
+  isRead      Boolean              @default(false)
+  createdAt   DateTime             @default(now()) @db.Timestamptz()
+  updatedAt   DateTime             @updatedAt @db.Timestamptz()
+
+  recipient User? @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+  actor     User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+}
+
+model PromotionUsage {
+  id             String   @id @default(uuid())
+  promotionId    String
+  userId         String?
+  courseId       String?
+  paymentId      String?
+  codeApplied    String?
+  discountAmount Decimal  @db.Decimal(10, 2)
+  orderAmount    Decimal  @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @db.Timestamptz()
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  course    Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
 }
 
 // ==========================================
@@ -670,114 +1183,114 @@ model CourseCertificateRule {
   id                   String   @id @default(uuid())
   courseId             String   @unique
   requirePostTest      Boolean  @default(true)
-  minimumPostTestScore Float?   // เช่น 80% ถึงจะผ่าน
+  minimumPostTestScore Float? // เช่น 80% ถึงจะผ่าน
   createdAt            DateTime @default(now()) @db.Timestamptz()
   updatedAt            DateTime @updatedAt @db.Timestamptz()
   course               Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model CourseTest {
-  id          String           @id @default(uuid())
-  courseId    String
-  title       String
-  description String?          @db.Text
-  type        CourseTestType
-  status      CourseTestStatus @default(DRAFT)
-  timeLimit   Int?             // เวลาในการทำสอบ (นาที)
-  passingScore Float?          // คะแนนที่ถือว่าผ่าน
-  createdAt   DateTime         @default(now()) @db.Timestamptz()
-  updatedAt   DateTime         @updatedAt @db.Timestamptz()
+  id           String           @id @default(uuid())
+  courseId     String
+  title        String
+  description  String?          @db.Text
+  type         CourseTestType
+  status       CourseTestStatus @default(DRAFT)
+  timeLimit    Int? // เวลาในการทำสอบ (นาที)
+  passingScore Float? // คะแนนที่ถือว่าผ่าน
+  createdAt    DateTime         @default(now()) @db.Timestamptz()
+  updatedAt    DateTime         @updatedAt @db.Timestamptz()
 
-  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  sections    TestSection[]
-  attempts    TestAttempt[]
+  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sections TestSection[]
+  attempts TestAttempt[]
 
   @@unique([courseId, type]) // 1 คอร์ส มี Pre 1 อัน และ Post 1 อัน ที่ใช้งานได้
 }
 
 model TestSection {
-  id          String       @id @default(uuid())
+  id          String  @id @default(uuid())
   testId      String
   title       String
   description String?
-  order       Int          @default(0)
-  dimension   String?      // หมวดหมู่ทักษะหลักของ Section นี้ (เช่น Logic, Design)
-  
-  test        CourseTest   @relation(fields: [testId], references: [id], onDelete: Cascade)
-  questions   TestQuestion[]
+  order       Int     @default(0)
+  dimension   String? // หมวดหมู่ทักษะหลักของ Section นี้ (เช่น Logic, Design)
+
+  test      CourseTest     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  questions TestQuestion[]
 }
 
 model TestQuestion {
-  id             String           @id @default(uuid())
-  sectionId      String
-  prompt         String           @db.Text
-  type           TestQuestionType @default(MULTIPLE_CHOICE)
-  difficulty     DifficultyLevel  @default(MEDIUM)
-  scoreWeight    Float            @default(1.0)
-  order          Int              @default(0)
-  aiRubric       String?          @db.Text // เกณฑ์ให้ AI ตรวจสำหรับอัตนัย
-  
-  section        TestSection      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  choices        TestChoice[]
-  answers        TestAnswer[]
+  id          String           @id @default(uuid())
+  sectionId   String
+  prompt      String           @db.Text
+  type        TestQuestionType @default(MULTIPLE_CHOICE)
+  difficulty  DifficultyLevel  @default(MEDIUM)
+  scoreWeight Float            @default(1.0)
+  order       Int              @default(0)
+  aiRubric    String?          @db.Text // เกณฑ์ให้ AI ตรวจสำหรับอัตนัย
+
+  section TestSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  choices TestChoice[]
+  answers TestAnswer[]
 }
 
 model TestChoice {
-  id          String       @id @default(uuid())
+  id          String  @id @default(uuid())
   questionId  String
-  text        String       @db.Text
-  isCorrect   Boolean      @default(false)
-  order       Int          @default(0)
-  explanation String?      @db.Text // คำอธิบายเฉลย
-  
-  question    TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text        String  @db.Text
+  isCorrect   Boolean @default(false)
+  order       Int     @default(0)
+  explanation String? @db.Text // คำอธิบายเฉลย
+
+  question TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model TestAttempt {
-  id              String            @id @default(uuid())
-  testId          String
-  userId          String
-  status          TestAttemptStatus @default(IN_PROGRESS)
-  startedAt       DateTime          @default(now()) @db.Timestamptz()
-  submittedAt     DateTime?         @db.Timestamptz()
-  
-  learnerSnapshot Json?             // เก็บ Profile/เป้าหมายผู้เรียน ณ เวลานั้น
+  id          String            @id @default(uuid())
+  testId      String
+  userId      String
+  status      TestAttemptStatus @default(IN_PROGRESS)
+  startedAt   DateTime          @default(now()) @db.Timestamptz()
+  submittedAt DateTime?         @db.Timestamptz()
+
+  learnerSnapshot Json? // เก็บ Profile/เป้าหมายผู้เรียน ณ เวลานั้น
   totalScore      Float?
   maxScore        Float?
-  normalizedScore Float?            // คิดเป็นเปอร์เซ็นต์
-  
-  test            CourseTest        @relation(fields: [testId], references: [id], onDelete: Cascade)
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers         TestAnswer[]
-  evaluation      TestEvaluation?
+  normalizedScore Float? // คิดเป็นเปอร์เซ็นต์
+
+  test       CourseTest      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers    TestAnswer[]
+  evaluation TestEvaluation?
 }
 
 model TestAnswer {
-  id              String       @id @default(uuid())
-  attemptId       String
-  questionId      String
+  id               String   @id @default(uuid())
+  attemptId        String
+  questionId       String
   selectedChoiceId String?
-  textAnswer      String?      @db.Text // สำหรับอัตนัย
-  isCorrect       Boolean?
-  scoreEarned     Float?
-  aiFeedback      String?      @db.Text // Feedback รายข้อจาก AI
-  
-  attempt         TestAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question        TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  textAnswer       String?  @db.Text // สำหรับอัตนัย
+  isCorrect        Boolean?
+  scoreEarned      Float?
+  aiFeedback       String?  @db.Text // Feedback รายข้อจาก AI
+
+  attempt  TestAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model TestEvaluation {
-  id              String       @id @default(uuid())
-  attemptId       String       @unique
-  learnerLevel    String       // Beginner, Intermediate, Advanced
-  aiSummary       String       @db.Text
+  id              String   @id @default(uuid())
+  attemptId       String   @unique
+  learnerLevel    String // Beginner, Intermediate, Advanced
+  aiSummary       String   @db.Text
   strengths       String[]
   weaknesses      String[]
-  recommendations Json         // รายการคอร์ส/บทเรียนที่แนะนำ
-  dimensionScores Json         // Record<string, {score: number, max: number}>
-  evaluatedAt     DateTime     @default(now()) @db.Timestamptz()
-  
-  attempt         TestAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  recommendations Json // รายการคอร์ส/บทเรียนที่แนะนำ
+  dimensionScores Json // Record<string, {score: number, max: number}>
+  evaluatedAt     DateTime @default(now()) @db.Timestamptz()
+
+  attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 }
 
 // ==========================================
@@ -786,7 +1299,7 @@ model TestEvaluation {
 
 model UserRecommendation {
   id                String   @id @default(uuid())
-  userId            String?  // อนุญาตให้เป็น null ได้เผื่อกรณี Guest ใช้งาน
+  userId            String? // อนุญาตให้เป็น null ได้เผื่อกรณี Guest ใช้งาน
   age               Int?
   educationLevel    String?
   currentCareer     String?
@@ -802,22 +1315,22 @@ model UserRecommendation {
   createdAt         DateTime @default(now()) @db.Timestamptz()
   updatedAt         DateTime @updatedAt @db.Timestamptz()
 
-  recommendations   RecommendationCourse[]
+  recommendations RecommendationCourse[]
 
   @@map("user_recommendations")
 }
 
 model RecommendationCourse {
-  id                 String   @id @default(uuid())
-  recommendationId   String
-  courseId           String
-  score              Float
-  reason             String   @db.Text
-  sortOrder          Int
-  createdAt          DateTime @default(now()) @db.Timestamptz()
+  id               String   @id @default(uuid())
+  recommendationId String
+  courseId         String
+  score            Float
+  reason           String   @db.Text
+  sortOrder        Int
+  createdAt        DateTime @default(now()) @db.Timestamptz()
 
-  recommendation     UserRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  course             Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  recommendation UserRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  course         Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@map("recommendation_courses")
 }
@@ -826,126 +1339,149 @@ model RecommendationCourse {
 // 🚀 NEW AI Career Assessment System
 // ==========================================
 
-enum AssessmentQuestionType { SINGLE_CHOICE, MULTIPLE_CHOICE, RATING_SCALE }
-enum CareerAssessmentStatus { IN_PROGRESS, COMPLETED, CANCELLED }
+enum AssessmentQuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  RATING_SCALE
+}
+
+enum CareerAssessmentStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
 
 model CareerAssessmentQuestion {
-  id          String                 @id @default(uuid())
-  prompt      String                 @db.Text
-  type        AssessmentQuestionType @default(SINGLE_CHOICE)
-  category    String                 // e.g., analytical_thinking, creativity
-  order       Int
-  active      Boolean                @default(true)
-  createdAt   DateTime               @default(now()) @db.Timestamptz()
-  updatedAt   DateTime               @updatedAt @db.Timestamptz()
+  id        String                 @id @default(uuid())
+  prompt    String                 @db.Text
+  type      AssessmentQuestionType @default(SINGLE_CHOICE)
+  category  String // e.g., analytical_thinking, creativity
+  order     Int
+  active    Boolean                @default(true)
+  createdAt DateTime               @default(now()) @db.Timestamptz()
+  updatedAt DateTime               @updatedAt @db.Timestamptz()
 
-  options     CareerAssessmentOption[]
-  answers     CareerAssessmentAnswer[]
+  options CareerAssessmentOption[]
+  answers CareerAssessmentAnswer[]
 }
 
 model CareerAssessmentOption {
-  id          String                   @id @default(uuid())
-  questionId  String
-  text        String                   @db.Text
-  weight      Float                    // น้ำหนักคะแนนสำหรับตัวเลือกนี้ (เช่น 1-5)
-  order       Int                      @default(0)
-  
-  question    CareerAssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  answers     CareerAssessmentAnswer[]
+  id         String @id @default(uuid())
+  questionId String
+  text       String @db.Text
+  weight     Float // น้ำหนักคะแนนสำหรับตัวเลือกนี้ (เช่น 1-5)
+  order      Int    @default(0)
+
+  question CareerAssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  CareerAssessmentAnswer[]
 }
 
 model CareerAssessmentSession {
-  id          String                 @id @default(uuid())
-  userId      String?                // รองรับ Guest
-  status      CareerAssessmentStatus @default(IN_PROGRESS)
-  createdAt   DateTime               @default(now()) @db.Timestamptz()
-  updatedAt   DateTime               @updatedAt @db.Timestamptz()
+  id        String                 @id @default(uuid())
+  userId    String? // รองรับ Guest
+  status    CareerAssessmentStatus @default(IN_PROGRESS)
+  createdAt DateTime               @default(now()) @db.Timestamptz()
+  updatedAt DateTime               @updatedAt @db.Timestamptz()
 
-  user        User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers     CareerAssessmentAnswer[]
-  result      CareerAssessmentResult?
+  user    User?                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers CareerAssessmentAnswer[]
+  result  CareerAssessmentResult?
 }
 
 model CareerAssessmentAnswer {
-  id          String                   @id @default(uuid())
+  id          String  @id @default(uuid())
   sessionId   String
   questionId  String
   optionId    String?
-  ratingValue Int?                     // กรณีเป็น RATING_SCALE
-  
-  session     CareerAssessmentSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  question    CareerAssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  option      CareerAssessmentOption?  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  ratingValue Int? // กรณีเป็น RATING_SCALE
+
+  session  CareerAssessmentSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question CareerAssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  option   CareerAssessmentOption?  @relation(fields: [optionId], references: [id], onDelete: Cascade)
 }
 
 model CareerAssessmentResult {
-  id                String                     @id @default(uuid())
-  sessionId         String                     @unique
-  aiSummary         String                     @db.Text
-  strengths         String[]
-  improvements      String[]
-  learningPath      Json                       // [{ step: 1, title: '...', desc: '...' }]
-  createdAt         DateTime                   @default(now()) @db.Timestamptz()
+  id           String   @id @default(uuid())
+  sessionId    String   @unique
+  aiSummary    String   @db.Text
+  strengths    String[]
+  improvements String[]
+  learningPath Json // [{ step: 1, title: '...', desc: '...' }]
+  createdAt    DateTime @default(now()) @db.Timestamptz()
 
-  session           CareerAssessmentSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  categoryScores    CareerCategoryScore[]
+  session            CareerAssessmentSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  categoryScores     CareerCategoryScore[]
   recommendedCareers RecommendedCareerMapping[]
   recommendedCourses RecommendedCourseMapping[]
 }
 
 model CareerCategoryScore {
-  id          String                 @id @default(uuid())
-  resultId    String
-  category    String
-  score       Float
-  
-  result      CareerAssessmentResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  resultId String
+  category String
+  score    Float
+
+  result CareerAssessmentResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
 }
 
 model CareerMapping {
-  id              String   @id @default(uuid())
-  careerId        String
-  category        String   // ต้องตรงกับ category ของ Question (เช่น analytical_thinking)
-  requiredWeight  Float    // ค่าน้ำหนักความสำคัญที่อาชีพนี้ต้องการ (เช่น 0.0 - 1.0)
-  
-  career          Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
-  
+  id             String @id @default(uuid())
+  careerId       String
+  category       String // ต้องตรงกับ category ของ Question (เช่น analytical_thinking)
+  requiredWeight Float // ค่าน้ำหนักความสำคัญที่อาชีพนี้ต้องการ (เช่น 0.0 - 1.0)
+
+  career Career @relation(fields: [careerId], references: [id], onDelete: Cascade)
+
   @@unique([careerId, category])
 }
 
 model RecommendedCareerMapping {
-  id              String                 @id @default(uuid())
+  id              String @id @default(uuid())
   resultId        String
   careerId        String
-  matchPercentage Float                  // เปอร์เซ็นต์ความเข้ากันได้
+  matchPercentage Float // เปอร์เซ็นต์ความเข้ากันได้
   rank            Int
-  
-  result          CareerAssessmentResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
-  career          Career                 @relation(fields: [careerId], references: [id], onDelete: Cascade)
+
+  result CareerAssessmentResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  career Career                 @relation(fields: [careerId], references: [id], onDelete: Cascade)
 }
 
 model RecommendedCourseMapping {
-  id          String                 @id @default(uuid())
-  resultId    String
-  courseId    String
-  reason      String                 @db.Text
-  
-  result      CareerAssessmentResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
-  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  resultId String
+  courseId String
+  reason   String @db.Text
+
+  result CareerAssessmentResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  course Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 // ==========================================
 // 🤖 AI Chatbot Assistant System
 // ==========================================
 
-enum ChatSenderType { USER, BOT, SYSTEM }
-enum ChatMessageType { TEXT, COURSE_CARD, QUICK_REPLY, ACTION_LINK }
-enum ChatSessionStatus { ACTIVE, CLOSED }
+enum ChatSenderType {
+  USER
+  BOT
+  SYSTEM
+}
+
+enum ChatMessageType {
+  TEXT
+  COURSE_CARD
+  QUICK_REPLY
+  ACTION_LINK
+}
+
+enum ChatSessionStatus {
+  ACTIVE
+  CLOSED
+}
 
 model ChatSession {
   id            String            @id @default(uuid())
-  userId        String?           // รองรับ Member
-  guestToken    String?           // รองรับ Guest
+  userId        String? // รองรับ Member
+  guestToken    String? // รองรับ Guest
   title         String?           @db.VarChar(255)
   status        ChatSessionStatus @default(ACTIVE)
   startedAt     DateTime          @default(now()) @db.Timestamptz()
@@ -953,9 +1489,9 @@ model ChatSession {
   createdAt     DateTime          @default(now()) @db.Timestamptz()
   updatedAt     DateTime          @updatedAt @db.Timestamptz()
 
-  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  messages      ChatMessage[]
-  intentLogs    ChatbotIntentLog[]
+  user       User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages   ChatMessage[]
+  intentLogs ChatbotIntentLog[]
 }
 
 model ChatMessage {
@@ -964,10 +1500,10 @@ model ChatMessage {
   senderType  ChatSenderType  @default(USER)
   message     String          @db.Text
   messageType ChatMessageType @default(TEXT)
-  metadata    Json?           // เก็บข้อมูลเช่น courseId, ลิงก์, หรือ options
+  metadata    Json? // เก็บข้อมูลเช่น courseId, ลิงก์, หรือ options
   createdAt   DateTime        @default(now()) @db.Timestamptz()
 
-  session     ChatSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model FAQ {
@@ -1007,7 +1543,7 @@ model ChatbotKnowledge {
   id         String   @id @default(uuid())
   title      String   @db.VarChar(255)
   content    String   @db.Text
-  sourceType String   // เช่น MANUAL, SCRAPED, UPLOADED
+  sourceType String // เช่น MANUAL, SCRAPED, UPLOADED
   tags       String[]
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now()) @db.Timestamptz()
@@ -1015,13 +1551,13 @@ model ChatbotKnowledge {
 }
 
 model ChatbotIntentLog {
-  id            String   @id @default(uuid())
-  sessionId     String?
-  userMessage   String   @db.Text
-  detectedIntent String  @db.VarChar(100)
-  confidence    Float    @default(1.0)
-  matchedSource String?  @db.VarChar(255)
-  createdAt     DateTime @default(now()) @db.Timestamptz()
+  id             String   @id @default(uuid())
+  sessionId      String?
+  userMessage    String   @db.Text
+  detectedIntent String   @db.VarChar(100)
+  confidence     Float    @default(1.0)
+  matchedSource  String?  @db.VarChar(255)
+  createdAt      DateTime @default(now()) @db.Timestamptz()
 
-  session       ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  session ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 }

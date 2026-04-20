@@ -31,7 +31,10 @@ export class RoleGuard implements CanActivate {
       throw new UnauthorizedException('Authentication is required');
     }
 
-    if (!roles.includes(user.role)) {
+    const grantedRoles = new Set([user.role, ...(user.roles ?? [])]);
+    const hasRole = roles.some((role) => grantedRoles.has(role));
+
+    if (!hasRole) {
       throw new ForbiddenException(
         'Insufficient permission to perform this action',
       );

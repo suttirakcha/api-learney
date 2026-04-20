@@ -18,6 +18,7 @@ import { PaymentModule } from './payment/payment.module';
 import { MailModule } from './mail/mail.module';
 import { StatsModule } from './stats/stats.module';
 import { ExperienceModule } from './experience/experience.module';
+import { WorkspaceModule } from './workspace/workspace.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ExperienceModule } from './experience/experience.module';
     MailModule,
     StatsModule,
     ExperienceModule,
+    WorkspaceModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],

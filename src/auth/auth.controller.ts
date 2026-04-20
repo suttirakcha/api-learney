@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Res,
   Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -14,6 +16,9 @@ import { Public } from './decorators/public.decorator';
 import { AuthTokenService } from '../shared/securities/services/auth-token.service';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { AuthGuard } from './guards/auth.guard';
+import { UsersService } from '../users/users.service';
+import { Permission, Role } from '../database/generated/prisma/enums';
 
 const REFRESH_TOKEN_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
 const ACCESS_TOKEN_MAX_AGE = 1000 * 60 * 15;
@@ -23,6 +28,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly tokenService: AuthTokenService,
+    private readonly usersService: UsersService,
   ) {}
 
   private getCookieOptions(maxAge: number): CookieOptions {
@@ -98,10 +104,18 @@ export class AuthController {
 
     const payload = await this.tokenService.verify(refreshToken);
 
+    const user = await this.usersService.findByIdWithAccess(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const tokens = await this.authService.generateTokens({
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      id: user.id,
+      email: user.email,
+      role: user.role as Role,
+      roles: (user.roles ?? []) as Role[],
+      permissions: (user.permissions ?? []) as Permission[],
     });
 
     this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -109,6 +123,19 @@ export class AuthController {
     return {
       accessToken: tokens.accessToken,
     };
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  async getMe(@Req() req: Request) {
+    const userId = (req.user as { sub: string }).sub;
+    const user = await this.usersService.findByIdWithAccess(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
   }
 
   @Post('logout')

@@ -310,6 +310,35 @@ export class PaymentService {
         },
       });
 
+      if (payment.cart.appliedPromotionId && this.toNumber(payment.cart.discount) > 0) {
+        await tx.promotionUsage.create({
+          data: {
+            promotionId: payment.cart.appliedPromotionId,
+            userId,
+            paymentId: payment.id,
+            courseId: latestCourseIds[0] ?? null,
+            codeApplied: payment.cart.appliedPromotionCode,
+            discountAmount: payment.cart.discount ?? 0,
+            orderAmount: payment.cart.subtotal,
+          },
+        });
+
+        const usageCount = await tx.promotionUsage.count({
+          where: {
+            promotionId: payment.cart.appliedPromotionId,
+          },
+        });
+
+        await tx.promotion.update({
+          where: {
+            id: payment.cart.appliedPromotionId,
+          },
+          data: {
+            usageCount,
+          },
+        });
+      }
+
       await tx.cartItem.deleteMany({
         where: { cartId: payment.cartId },
       });
@@ -320,6 +349,8 @@ export class PaymentService {
           subtotal: 0,
           total: 0,
           discount: 0,
+          appliedPromotionId: null,
+          appliedPromotionCode: null,
         },
       });
 

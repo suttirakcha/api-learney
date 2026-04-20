@@ -11,7 +11,7 @@ import { LoginDto } from './dtos/login.dto';
 import { BcryptService } from '../shared/securities/services/bcrypt.service';
 import { AuthTokenService } from '../shared/securities/services/auth-token.service';
 import { JwtPayload } from '../types/jwt-payload.type';
-import { Role } from '../database/generated/prisma/enums';
+import { Permission, Role } from '../database/generated/prisma/enums';
 import { MailService } from 'src/mail/mail.service';
 import { TypedConfigService } from 'src/config/typed-config.service';
 import { UsersService } from 'src/users/users.service';
@@ -19,6 +19,10 @@ import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { ResetPasswordTokenPayload } from 'src/@types/jwt-payload.type';
+import {
+  getPermissionsForRoles,
+  normalizeRoles,
+} from './permissions';
 @Injectable()
 export class AuthService {
   constructor(
@@ -33,11 +37,21 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async generateTokens(user: { id: string; email: string; role: Role }) {
+  async generateTokens(user: {
+    id: string;
+    email: string;
+    role: Role;
+    roles?: Role[];
+    permissions?: Permission[];
+  }) {
+    const roles = normalizeRoles(user.role, user.roles);
+    const permissions = getPermissionsForRoles(roles, user.permissions);
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
+      roles,
+      permissions,
     };
 
     // ✅ แยก access / refresh
@@ -53,7 +67,7 @@ export class AuthService {
   }
 
   async register(body: RegisterDto) {
-    const { email, password, fullname, role = Role.USER } = body;
+    const { email, password, fullname } = body;
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -70,7 +84,16 @@ export class AuthService {
         email,
         fullname,
         password: hashedPassword,
-        role,
+        role: Role.USER,
+        roles: [Role.USER],
+        preferredWorkspace: Role.USER,
+      },
+      include: {
+        enrolledCourses: {
+          select: {
+            courseId: true,
+          },
+        },
       },
     });
 
@@ -106,10 +129,42 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const tokens = await this.generateTokens(user);
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+      },
+      include: {
+        enrolledCourses: {
+          select: {
+            courseId: true,
+          },
+        },
+        instructorProfile: {
+          select: {
+            id: true,
+            displayName: true,
+          },
+        },
+        instructorApplications: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+          select: {
+            id: true,
+            status: true,
+            displayName: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    const tokens = await this.generateTokens(updatedUser);
 
     return {
-      user: this.userService.toSafeUser(user),
+      user: this.userService.toSafeUser(updatedUser),
       ...tokens,
     };
   }
