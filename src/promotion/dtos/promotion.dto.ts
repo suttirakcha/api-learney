@@ -121,11 +121,11 @@ export class CreatePromotionDto {
   code?: string;
 
   @IsDate()
-  @Transform(({ value }) => new Date(value))
+  @Transform(({ value }: { value: string | number | Date }) => new Date(value))
   startDate!: Date;
 
   @IsDate()
-  @Transform(({ value }) => new Date(value))
+  @Transform(({ value }: { value: string | number | Date }) => new Date(value))
   endDate!: Date;
 
   @IsBoolean()

@@ -34,7 +34,8 @@ export class ExperienceController {
       authHeader && authHeader.startsWith('Bearer ')
         ? authHeader.slice('Bearer '.length)
         : null;
-    const token = headerToken ?? req.cookies?.accessToken;
+    const token =
+      headerToken ?? (req.cookies?.accessToken as string | undefined);
 
     if (!token) {
       return null;

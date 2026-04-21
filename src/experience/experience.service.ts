@@ -33,6 +33,20 @@ type LocalizedRecord = {
   en?: string;
 };
 
+type FallbackSkillQuestion = {
+  id: string;
+  category: string;
+  prompt: LocalizedRecord;
+};
+
+type FallbackSkillTest = {
+  slug: string;
+  ageGroup: string;
+  title: LocalizedRecord;
+  intro: LocalizedRecord;
+  questions: FallbackSkillQuestion[];
+};
+
 const publicCourseVisibility: Prisma.CourseWhereInput = {
   OR: [
     { isPublished: true },
@@ -52,6 +66,230 @@ const skillCategories = [
   'Analysis',
   'Communication',
   'Teamwork',
+];
+
+const localizedSkillCategoryLabels: Record<string, LocalizedRecord> = {
+  Creativity: { th: 'ความคิดสร้างสรรค์', en: 'Creativity' },
+  Leadership: { th: 'ภาวะผู้นำ', en: 'Leadership' },
+  'Helping Others': { th: 'การช่วยเหลือผู้อื่น', en: 'Helping Others' },
+  Analysis: { th: 'การวิเคราะห์', en: 'Analysis' },
+  Communication: { th: 'การสื่อสาร', en: 'Communication' },
+  Teamwork: { th: 'การทำงานเป็นทีม', en: 'Teamwork' },
+};
+
+const fallbackSkillTests: FallbackSkillTest[] = [
+  {
+    slug: 'primary-school',
+    ageGroup: 'Primary School (7-12)',
+    title: { th: 'วัยประถม (7-12 ปี)', en: 'Primary School (7-12)' },
+    intro: {
+      th: 'ลองสำรวจสิ่งที่ชอบและจุดแข็งของตัวเองผ่านคำถามสั้น ๆ ที่ตอบง่าย',
+      en: 'Discover the activities you enjoy and the strengths you already show.',
+    },
+    questions: [
+      {
+        id: 'primary-creativity',
+        category: 'Creativity',
+        prompt: {
+          th: 'ฉันชอบคิดวิธีใหม่ ๆ เวลาเล่นหรือทำการบ้าน',
+          en: 'I like thinking of new ways to play or solve homework.',
+        },
+      },
+      {
+        id: 'primary-helping',
+        category: 'Helping Others',
+        prompt: {
+          th: 'ฉันรู้สึกดีเมื่อได้ช่วยเพื่อนหรือคนในบ้าน',
+          en: 'I feel happy when I can help friends or family.',
+        },
+      },
+      {
+        id: 'primary-analysis',
+        category: 'Analysis',
+        prompt: {
+          th: 'ฉันชอบหาคำตอบว่าทำไมสิ่งต่าง ๆ ถึงเป็นแบบนั้น',
+          en: 'I enjoy figuring out why things happen the way they do.',
+        },
+      },
+      {
+        id: 'primary-communication',
+        category: 'Communication',
+        prompt: {
+          th: 'ฉันชอบเล่าเรื่องหรืออธิบายสิ่งที่ตัวเองคิดให้คนอื่นฟัง',
+          en: 'I like telling stories or explaining my ideas to others.',
+        },
+      },
+      {
+        id: 'primary-teamwork',
+        category: 'Teamwork',
+        prompt: {
+          th: 'ฉันทำงานหรือเล่นกับเพื่อนได้ดี',
+          en: 'I work and play well with others.',
+        },
+      },
+    ],
+  },
+  {
+    slug: 'secondary-school',
+    ageGroup: 'Secondary School (13-18)',
+    title: { th: 'วัยมัธยม (13-18 ปี)', en: 'Secondary School (13-18)' },
+    intro: {
+      th: 'มองหาจุดเด่นของตัวเองเพื่อใช้วางแผนการเรียนและเส้นทางอนาคต',
+      en: 'See your strengths more clearly and use them to shape your next steps.',
+    },
+    questions: [
+      {
+        id: 'secondary-creativity',
+        category: 'Creativity',
+        prompt: {
+          th: 'ฉันชอบสร้างไอเดียหรือผลงานที่แตกต่างจากเดิม',
+          en: 'I enjoy creating ideas or projects that feel original.',
+        },
+      },
+      {
+        id: 'secondary-leadership',
+        category: 'Leadership',
+        prompt: {
+          th: 'เวลาอยู่ในกลุ่ม ฉันมักช่วยชวนเพื่อนให้เดินหน้าต่อได้',
+          en: 'When working in groups, I often help everyone keep moving forward.',
+        },
+      },
+      {
+        id: 'secondary-analysis',
+        category: 'Analysis',
+        prompt: {
+          th: 'ฉันชอบวิเคราะห์ข้อมูลหรือเปรียบเทียบทางเลือกก่อนตัดสินใจ',
+          en: 'I like analyzing information before making decisions.',
+        },
+      },
+      {
+        id: 'secondary-communication',
+        category: 'Communication',
+        prompt: {
+          th: 'ฉันอธิบายสิ่งที่คิดให้เพื่อนหรือครูเข้าใจได้ค่อนข้างดี',
+          en: 'I can usually explain my ideas clearly to teachers or friends.',
+        },
+      },
+      {
+        id: 'secondary-teamwork',
+        category: 'Teamwork',
+        prompt: {
+          th: 'ฉันปรับตัวทำงานร่วมกับเพื่อนหลายแบบได้',
+          en: 'I can adapt and work with different kinds of teammates.',
+        },
+      },
+    ],
+  },
+  {
+    slug: 'university',
+    ageGroup: 'University (19-22)',
+    title: { th: 'วัยมหาวิทยาลัย (19-22 ปี)', en: 'University (19-22)' },
+    intro: {
+      th: 'เช็กทักษะเด่นของตัวเองเพื่อมองเห็นสายงานและบทบาทที่เหมาะ',
+      en: 'Identify the strengths that align with your future role and career path.',
+    },
+    questions: [
+      {
+        id: 'university-creativity',
+        category: 'Creativity',
+        prompt: {
+          th: 'ฉันมักเห็นโอกาสใหม่ ๆ หรือแนวทางแก้ปัญหาที่คนอื่นยังไม่เห็น',
+          en: 'I often spot fresh opportunities or solutions others miss.',
+        },
+      },
+      {
+        id: 'university-leadership',
+        category: 'Leadership',
+        prompt: {
+          th: 'ฉันกล้ารับผิดชอบและพาทีมไปต่อเมื่อโปรเจกต์ติดขัด',
+          en: 'I step up and help lead when a project gets stuck.',
+        },
+      },
+      {
+        id: 'university-helping',
+        category: 'Helping Others',
+        prompt: {
+          th: 'ฉันชอบแชร์ความรู้หรือช่วยเพื่อนให้เก่งขึ้น',
+          en: 'I enjoy sharing knowledge and helping others improve.',
+        },
+      },
+      {
+        id: 'university-analysis',
+        category: 'Analysis',
+        prompt: {
+          th: 'ฉันชอบสรุปข้อมูลจำนวนมากให้เหลือประเด็นสำคัญ',
+          en: 'I like turning lots of information into clear key takeaways.',
+        },
+      },
+      {
+        id: 'university-communication',
+        category: 'Communication',
+        prompt: {
+          th: 'ฉันนำเสนอความคิดของตัวเองได้อย่างมั่นใจและเข้าใจง่าย',
+          en: 'I can present my ideas clearly and confidently.',
+        },
+      },
+    ],
+  },
+  {
+    slug: 'working-age',
+    ageGroup: 'Working Age (23+)',
+    title: { th: 'วัยทำงาน (23+ ปี)', en: 'Working Age (23+)' },
+    intro: {
+      th: 'สำรวจจุดแข็งในการทำงาน เพื่อเห็นทิศทางเติบโตและคอร์สที่เหมาะกับคุณ',
+      en: 'Understand your work strengths and spot the next step that fits you.',
+    },
+    questions: [
+      {
+        id: 'working-analysis',
+        category: 'Analysis',
+        prompt: {
+          th: 'ฉันชอบแยกปัญหาใหญ่ให้เป็นขั้นตอนเล็ก ๆ ก่อนลงมือแก้',
+          en: 'I like breaking complex problems into clear steps before solving them.',
+        },
+      },
+      {
+        id: 'working-communication',
+        category: 'Communication',
+        prompt: {
+          th: 'ฉันอธิบายเรื่องซับซ้อนให้คนอื่นเข้าใจได้ชัดเจน',
+          en: 'I can explain complex topics in a simple and clear way.',
+        },
+      },
+      {
+        id: 'working-teamwork',
+        category: 'Teamwork',
+        prompt: {
+          th: 'ฉันทำงานร่วมกับคนต่างสไตล์ได้โดยไม่เสียเป้าหมายหลัก',
+          en: 'I work well with different personalities without losing focus.',
+        },
+      },
+      {
+        id: 'working-leadership',
+        category: 'Leadership',
+        prompt: {
+          th: 'เมื่อทีมต้องการคนตัดสินใจ ฉันพร้อมรับบทบาทนั้น',
+          en: 'When a team needs direction, I am willing to step in and lead.',
+        },
+      },
+      {
+        id: 'working-creativity',
+        category: 'Creativity',
+        prompt: {
+          th: 'ฉันชอบเสนอวิธีใหม่ ๆ เพื่อให้งานเร็วขึ้นหรือดีขึ้น',
+          en: 'I like proposing new ideas that make work better or faster.',
+        },
+      },
+      {
+        id: 'working-helping',
+        category: 'Helping Others',
+        prompt: {
+          th: 'ฉันรู้สึกมีคุณค่าเมื่อได้ช่วยให้คนอื่นพัฒนาได้จริง',
+          en: 'I feel energized when I can help others grow in a real way.',
+        },
+      },
+    ],
+  },
 ];
 
 @Injectable()
@@ -106,6 +344,19 @@ export class ExperienceService {
   private getDiscoverySummary(summary: Prisma.JsonValue | null | undefined) {
     const localized = this.parseLocalized(summary, '');
     return localized.th ?? localized.en ?? '';
+  }
+
+  private getLocalizedSkillCategoryLabel(category: string): LocalizedRecord {
+    return (
+      localizedSkillCategoryLabels[category] ?? {
+        th: category,
+        en: category,
+      }
+    );
+  }
+
+  private getFallbackSkillTests() {
+    return fallbackSkillTests;
   }
 
   private slugify(value: string) {
@@ -1247,7 +1498,7 @@ export class ExperienceService {
   }
 
   async getSkillTestIntro(ageGroup?: string) {
-    const [tests, userCount, careers] = await Promise.all([
+    const [tests, userCount, careers, courseCount] = await Promise.all([
       this.prisma.skillTest.findMany({
         where: ageGroup ? { ageGroup } : undefined,
         include: {
@@ -1259,7 +1510,58 @@ export class ExperienceService {
       }),
       this.prisma.user.count(),
       this.prisma.career.count(),
+      this.prisma.course.count({ where: publicCourseVisibility }),
     ]);
+
+    if (!tests.length) {
+      const fallbackTests = this.getFallbackSkillTests();
+      const selectedFallback = ageGroup
+        ? (fallbackTests.find(
+            (test) =>
+              test.ageGroup === ageGroup ||
+              test.slug === this.normalizeAgeGroup(ageGroup),
+          ) ?? fallbackTests[0])
+        : null;
+
+      return {
+        intro: {
+          title: this.parseLocalized(
+            'คุณอาจเก่งมากกว่าที่คิด',
+            'You might be more capable than you think',
+          ),
+          subtitle: this.parseLocalized(
+            'มองเห็นจุดแข็ง เส้นทางอาชีพ และคอร์สที่เหมาะกับคุณ',
+            'Discover strengths, future-fit careers, and courses that match you.',
+          ),
+          stats: [
+            { label: 'users', value: `${userCount.toLocaleString()}+` },
+            { label: 'careers', value: `${careers.toLocaleString()}+` },
+            { label: 'courses', value: `${courseCount.toLocaleString()}+` },
+          ],
+        },
+        ageGroups: fallbackTests.map((test) => ({
+          id: test.slug,
+          slug: test.slug,
+          ageGroup: test.ageGroup,
+          title: test.title,
+          intro: test.intro,
+        })),
+        questionSet: selectedFallback
+          ? {
+              id: selectedFallback.slug,
+              ageGroup: selectedFallback.ageGroup,
+              title: selectedFallback.title,
+              questions: selectedFallback.questions.map((question, index) => ({
+                id: question.id,
+                category: question.category,
+                prompt: question.prompt,
+                scale: [1, 2, 3, 4, 5],
+                order: index + 1,
+              })),
+            }
+          : null,
+      };
+    }
 
     const selectedTest = ageGroup
       ? (tests.find((test) => test.ageGroup === ageGroup) ?? tests[0])
@@ -1278,10 +1580,7 @@ export class ExperienceService {
         stats: [
           { label: 'users', value: `${userCount.toLocaleString()}+` },
           { label: 'careers', value: `${careers.toLocaleString()}+` },
-          {
-            label: 'courses',
-            value: `${(await this.prisma.course.count({ where: publicCourseVisibility })).toLocaleString()}+`,
-          },
+          { label: 'courses', value: `${courseCount.toLocaleString()}+` },
         ],
       },
       ageGroups: tests.map((test) => ({
@@ -1322,10 +1621,12 @@ export class ExperienceService {
         },
       },
     });
-
-    if (!test) {
-      throw new NotFoundException('Skill test not found');
-    }
+    const fallbackTest =
+      this.getFallbackSkillTests().find(
+        (item) =>
+          item.ageGroup === dto.ageGroup ||
+          item.slug === this.normalizeAgeGroup(dto.ageGroup),
+      ) ?? null;
 
     if (!dto.answers.length) {
       throw new BadRequestException('Answers are required');
@@ -1375,30 +1676,47 @@ export class ExperienceService {
       }
     });
 
-    const topCareerIds = [...careerScores.entries()]
+    let topCareerIds = [...careerScores.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([careerId]) => careerId);
 
+    if (!topCareerIds.length) {
+      topCareerIds = (
+        await this.prisma.career.findMany({
+          take: 6,
+          orderBy: { createdAt: 'asc' },
+          select: { id: true },
+        })
+      ).map((career) => career.id);
+    }
+
+    const topCategoryLabels = topCategories.map(
+      (item) =>
+        this.getLocalizedSkillCategoryLabel(item.category).th ?? item.category,
+    );
+
     const summary = this.parseLocalized(
       {
-        th: `จุดแข็งเด่นของคุณคือ ${topCategories
-          .map((item) => item.category)
-          .join(', ')} และทั้งหมดนี้ยังพัฒนาได้อีกมาก`,
-        en: `Your strongest areas are ${topCategories
-          .map((item) => item.category)
-          .join(', ')}, and each one can keep growing with practice.`,
+        th:
+          topCategoryLabels.length > 0
+            ? `จุดแข็งเด่นของคุณคือ ${topCategoryLabels.join(', ')} และทั้งหมดนี้ยังพัฒนาได้อีกมาก`
+            : 'คุณมีจุดแข็งหลายด้านที่พร้อมต่อยอดได้อีกมาก',
+        en: `Your strongest areas are ${
+          topCategories.map((item) => item.category).join(', ') ||
+          'multiple strengths'
+        }, and each one can keep growing with practice.`,
       },
       '',
     );
 
     const attempt = await this.prisma.skillTestAttempt.create({
       data: {
-        skillTestId: test.id,
+        skillTestId: test?.id ?? null,
         userId,
         guestToken: userId ? null : `guest-${Date.now()}`,
         courseId: dto.courseId,
-        ageGroup: dto.ageGroup,
+        ageGroup: test?.ageGroup ?? fallbackTest?.ageGroup ?? dto.ageGroup,
         sourceType:
           dto.sourceType === 'COURSE_ASSESSMENT'
             ? AttemptSourceType.COURSE_ASSESSMENT
@@ -1445,10 +1763,21 @@ export class ExperienceService {
       throw new NotFoundException('Attempt not found');
     }
 
+    const careerIds =
+      attempt.topCareerIds.length > 0
+        ? attempt.topCareerIds
+        : (
+            await this.prisma.career.findMany({
+              take: 6,
+              orderBy: { createdAt: 'asc' },
+              select: { id: true },
+            })
+          ).map((career) => career.id);
+
     const careers = await this.prisma.career.findMany({
       where: {
         id: {
-          in: attempt.topCareerIds,
+          in: careerIds,
         },
       },
       include: {
@@ -1544,8 +1873,11 @@ export class ExperienceService {
     try {
       const courses = await this.prisma.course.findMany({
         where: {
-          id: { in: [...recommendedCourseIds] },
+          ...(recommendedCourseIds.size > 0
+            ? { id: { in: [...recommendedCourseIds] } }
+            : publicCourseVisibility),
         },
+        take: recommendedCourseIds.size > 0 ? undefined : 3,
         select: {
           id: true,
           slug: true,
