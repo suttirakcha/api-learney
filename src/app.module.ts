@@ -21,6 +21,8 @@ import { ExperienceModule } from './experience/experience.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { AiModule } from './ai/ai.module';
 import { ChatbotModule } from './chatbot/chatbot.module';
+import { SkillTestModule } from './skill-test/skill-test.module';
+import { PromotionModule } from './promotion/promotion.module';
 
 @Module({
   imports: [
@@ -42,7 +44,10 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     WorkspaceModule,
     AiModule,
     ChatbotModule,
+    SkillTestModule,
+    PromotionModule,
   ],
+
   controllers: [],
   providers: [PrismaService, BcryptService],
 })

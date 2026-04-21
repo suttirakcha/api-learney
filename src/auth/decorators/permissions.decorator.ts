@@ -5,4 +5,3 @@ export const PERMISSIONS = Symbol('Permissions');
 
 export const Permissions = (...permissions: Permission[]) =>
   SetMetadata(PERMISSIONS, permissions);
-

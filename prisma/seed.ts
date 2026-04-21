@@ -32,6 +32,47 @@ async function main() {
   await prisma.career.deleteMany();
 
   // =========================
+  // 🎯 CAREER ASSESSMENT DATA
+  // =========================
+  const careers = await prisma.career.createMany({
+    data: [
+      {
+        slug: 'frontend-developer',
+        name: { th: 'Frontend Developer', en: 'Frontend Developer' },
+        summary: {
+          th: 'อาชีพพัฒนาเว็บหน้า UI/UX',
+          en: 'Frontend web UI/UX developer',
+        },
+        image: 'frontend',
+        salaryRange: '50,000 - 120,000',
+        requiredSkills: ['React', 'HTML/CSS', 'JavaScript', 'UI/UX'],
+      },
+      {
+        slug: 'backend-developer',
+        name: { th: 'Backend Developer', en: 'Backend Developer' },
+        summary: {
+          th: 'อาชีพพัฒนาเซิร์ฟเวอร์และฐานข้อมูล',
+          en: 'Backend server and DB developer',
+        },
+        image: 'backend',
+        salaryRange: '60,000 - 150,000',
+        requiredSkills: ['Node.js', 'Python', 'Database', 'API'],
+      },
+      {
+        slug: 'fullstack-developer',
+        name: { th: 'Fullstack Developer', en: 'Fullstack Developer' },
+        summary: {
+          th: 'อาชีพพัฒนาเว็บทั้ง Frontend และ Backend',
+          en: 'Fullstack web developer',
+        },
+        image: 'fullstack',
+        salaryRange: '80,000 - 200,000',
+        requiredSkills: ['React', 'Node.js', 'Database', 'DevOps'],
+      },
+    ],
+  });
+
+  // =========================
   // 🔐 hash password
   // =========================
   const password = await bcrypt.hash('123456', 10);
@@ -124,29 +165,29 @@ async function main() {
         content: 'ดีมาก',
         rating: 5,
         courseId: course1.id,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         content: 'โอเค',
         rating: 4,
         courseId: course1.id,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         content: 'ดี',
         rating: 5,
         courseId: course2.id,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         content: 'เยี่ยม',
         rating: 4,
         courseId: course3.id,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ],
   });

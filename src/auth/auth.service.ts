@@ -19,10 +19,7 @@ import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { ResetPasswordTokenPayload } from 'src/@types/jwt-payload.type';
-import {
-  getPermissionsForRoles,
-  normalizeRoles,
-} from './permissions';
+import { getPermissionsForRoles, normalizeRoles } from './permissions';
 @Injectable()
 export class AuthService {
   constructor(

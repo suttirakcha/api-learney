@@ -4,4 +4,3 @@ export class PromotionCodeDto {
   @IsString()
   code: string;
 }
-

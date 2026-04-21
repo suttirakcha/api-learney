@@ -44,7 +44,9 @@ export function getPermissionsForRoles(
   const permissions = new Set<Permission>(customPermissions);
 
   roles.forEach((role) => {
-    permissionsByRole[role].forEach((permission) => permissions.add(permission));
+    permissionsByRole[role].forEach((permission) =>
+      permissions.add(permission),
+    );
   });
 
   return Array.from(permissions);

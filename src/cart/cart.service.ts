@@ -4,9 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'src/database/generated/prisma/internal/prismaNamespace';
-import {
-  PromotionType,
-} from 'src/database/generated/prisma/client';
+import { PromotionType } from 'src/database/generated/prisma/client';
 import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
@@ -109,17 +107,28 @@ export class CartService {
       throw new BadRequestException('โปรโมชันนี้อยู่นอกช่วงเวลาใช้งาน');
     }
 
-    if (promotion.minimumSpend && subtotal < this.toNumber(promotion.minimumSpend)) {
+    if (
+      promotion.minimumSpend &&
+      subtotal < this.toNumber(promotion.minimumSpend)
+    ) {
       throw new BadRequestException('ยอดซื้อขั้นต่ำยังไม่ถึงเงื่อนไขโปรโมชัน');
     }
 
-    if (promotion.usageLimit && promotion.usages.length >= promotion.usageLimit) {
+    if (
+      promotion.usageLimit &&
+      promotion.usages.length >= promotion.usageLimit
+    ) {
       throw new BadRequestException('โปรโมชันนี้ถูกใช้งานครบจำนวนแล้ว');
     }
 
-    const perUserUsage = promotion.usages.filter((usage) => usage.userId === userId);
+    const perUserUsage = promotion.usages.filter(
+      (usage) => usage.userId === userId,
+    );
 
-    if (promotion.perUserLimit && perUserUsage.length >= promotion.perUserLimit) {
+    if (
+      promotion.perUserLimit &&
+      perUserUsage.length >= promotion.perUserLimit
+    ) {
       throw new BadRequestException('คุณใช้โปรโมชันนี้ครบจำนวนที่กำหนดแล้ว');
     }
 
@@ -134,7 +143,10 @@ export class CartService {
         return promotion.categoryKeys.includes(item.course.category);
       }
 
-      if (promotion.scope === 'INSTRUCTOR' && promotion.instructorIds.length > 0) {
+      if (
+        promotion.scope === 'INSTRUCTOR' &&
+        promotion.instructorIds.length > 0
+      ) {
         return promotion.instructorIds.includes(item.course.instructorId);
       }
 
@@ -150,7 +162,8 @@ export class CartService {
       0,
     );
     const numericDiscount =
-      this.toNumber(promotion.discountAmount) || this.toNumber(promotion.discount);
+      this.toNumber(promotion.discountAmount) ||
+      this.toNumber(promotion.discount);
     const percentageTypes = new Set<PromotionType>([
       PromotionType.PERCENTAGE_DISCOUNT,
       PromotionType.FLASH_SALE,
@@ -392,4 +405,3 @@ export class CartService {
     };
   }
 }
-

@@ -8,4 +8,3 @@ export class WorkspaceActionDto {
   @IsObject()
   payload?: Record<string, unknown>;
 }
-

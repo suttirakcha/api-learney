@@ -16,6 +16,7 @@ export class CourseService {
 
   async getCourses(query: QueryCourseDto) {
     const { category, search } = query;
+    const now = new Date();
 
     const courses = await this.prisma.course.findMany({
       where: {
@@ -25,7 +26,7 @@ export class CourseService {
 
         ...(search
           ? {
-              course_name: {
+              courseName: {
                 contains: search,
                 mode: 'insensitive',
               },
@@ -39,6 +40,18 @@ export class CourseService {
             fullname: true,
           },
         },
+        promotions: {
+          where: {
+            promotion: {
+              active: true,
+              startDate: { lte: now },
+              endDate: { gte: now },
+            },
+          },
+          include: {
+            promotion: true,
+          },
+        },
       },
 
       orderBy: {
@@ -46,13 +59,35 @@ export class CourseService {
       },
     });
 
-    return courses.map((course) => ({
-      ...course,
-      instructor: course.instructor.fullname,
-    }));
+    return courses.map((course) => {
+      const activePromotions = [...course.promotions].sort(
+        (left, right) => right.promotion.priority - left.promotion.priority,
+      );
+
+      let discountPrice = Number(course.price);
+      const promo = activePromotions[0]?.promotion;
+
+      if (promo) {
+        if (promo.discount !== null) {
+          discountPrice = discountPrice * (1 - Number(promo.discount) / 100);
+        } else if (promo.discountAmount !== null) {
+          discountPrice = Math.max(
+            0,
+            discountPrice - Number(promo.discountAmount),
+          );
+        }
+      }
+
+      return {
+        ...course,
+        discountPrice: new Prisma.Decimal(discountPrice.toFixed(2)),
+        instructor: course.instructor.fullname,
+      };
+    });
   }
 
   async getCourseById(id: string) {
+    const now = new Date();
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
@@ -62,13 +97,44 @@ export class CourseService {
         courseDetails: {
           orderBy: { createdAt: 'asc' },
         },
+        promotions: {
+          where: {
+            promotion: {
+              active: true,
+              startDate: { lte: now },
+              endDate: { gte: now },
+            },
+          },
+          include: {
+            promotion: true,
+          },
+        },
       },
     });
 
     if (!course) return null;
 
+    const activePromotions = [...course.promotions].sort(
+      (left, right) => right.promotion.priority - left.promotion.priority,
+    );
+
+    let discountPrice = Number(course.price);
+    const promo = activePromotions[0]?.promotion;
+
+    if (promo) {
+      if (promo.discount !== null) {
+        discountPrice = discountPrice * (1 - Number(promo.discount) / 100);
+      } else if (promo.discountAmount !== null) {
+        discountPrice = Math.max(
+          0,
+          discountPrice - Number(promo.discountAmount),
+        );
+      }
+    }
+
     return {
       ...course,
+      discountPrice: new Prisma.Decimal(discountPrice.toFixed(2)),
       instructor: course.instructor.fullname,
     };
   }

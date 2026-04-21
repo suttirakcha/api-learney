@@ -310,7 +310,10 @@ export class PaymentService {
         },
       });
 
-      if (payment.cart.appliedPromotionId && this.toNumber(payment.cart.discount) > 0) {
+      if (
+        payment.cart.appliedPromotionId &&
+        this.toNumber(payment.cart.discount) > 0
+      ) {
         await tx.promotionUsage.create({
           data: {
             promotionId: payment.cart.appliedPromotionId,

@@ -664,13 +664,13 @@ model CommunityThread {
   createdAt        DateTime         @default(now()) @db.Timestamptz()
   updatedAt        DateTime         @updatedAt @db.Timestamptz()
 
-  course  Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  replies CommunityReply[]
-  reports CommunityReport[]
+  course    Course?             @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies   CommunityReply[]
+  reports   CommunityReport[]
   likes     CommunityLike[]
   bookmarks CommunityBookmark[]
-  tags      CommunityTag[]    @relation("ThreadTags")
+  tags      CommunityTag[]      @relation("ThreadTags")
 }
 
 model CommunityReply {
@@ -687,11 +687,11 @@ model CommunityReply {
   createdAt        DateTime         @default(now()) @db.Timestamptz()
   updatedAt        DateTime         @updatedAt @db.Timestamptz()
 
-  thread  CommunityThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent   CommunityReply?  @relation("NestedReplies", fields: [parentId], references: [id], onDelete: SetNull)
-  children CommunityReply[] @relation("NestedReplies")
-  reports CommunityReport[]
+  thread   CommunityThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   CommunityReply?   @relation("NestedReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  children CommunityReply[]  @relation("NestedReplies")
+  reports  CommunityReport[]
   likes    CommunityLike[]
 }
 
@@ -717,7 +717,7 @@ model CommunityLike {
   replyId   String?
   createdAt DateTime @default(now()) @db.Timestamptz()
 
-  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   thread CommunityThread? @relation(fields: [threadId], references: [id], onDelete: Cascade)
   reply  CommunityReply?  @relation(fields: [replyId], references: [id], onDelete: Cascade)
 
@@ -928,12 +928,12 @@ model CourseAssessment {
   createdAt   DateTime       @default(now()) @db.Timestamptz()
   updatedAt   DateTime       @updatedAt @db.Timestamptz()
 
-  course    Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  questions AssessmentQuestion[]
+  course    Course                     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions CourseAssessmentQuestion[]
   attempts  SkillTestAttempt[]
 }
 
-model AssessmentQuestion {
+model CourseAssessmentQuestion {
   id                 String   @id @default(uuid())
   courseAssessmentId String
   prompt             Json
@@ -1623,93 +1623,93 @@ model ChatbotIntentLog {
 // ==========================================
 
 model AssessmentStage {
-  id            String   @id @default(cuid())
-  slug          String   @unique
+  id            String  @id @default(cuid())
+  slug          String  @unique
   titleTh       String
   titleEn       String
   descriptionTh String?
   ageMin        Int
   ageMax        Int
-  sortOrder     Int      @default(0)
-  isActive      Boolean  @default(true)
+  sortOrder     Int     @default(0)
+  isActive      Boolean @default(true)
 
-  questions     AssessmentQuestion[]
-  sessions      AssessmentSession[]
+  questions CareerDiscoveryQuestion[]
+  sessions  AssessmentSession[]
 
-  createdAt     DateTime @default(now()) @db.Timestamptz()
-  updatedAt     DateTime @updatedAt @db.Timestamptz()
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
 }
 
-model AssessmentQuestion {
-  id              String   @id @default(cuid())
-  stageId         String
-  stage           AssessmentStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+model CareerDiscoveryQuestion {
+  id      String          @id @default(cuid())
+  stageId String
+  stage   AssessmentStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
-  questionText    String   @db.Text
-  helperText      String?  @db.Text
-  type            String   @default("LIKERT_5")
-  traitCode       String
-  traitDimension  String
-  scoreWeight     Float    @default(1)
-  reverseScore    Boolean  @default(false)
-  sortOrder       Int      @default(0)
-  isActive        Boolean  @default(true)
+  questionText   String  @db.Text
+  helperText     String? @db.Text
+  type           String  @default("LIKERT_5")
+  traitCode      String
+  traitDimension String
+  scoreWeight    Float   @default(1)
+  reverseScore   Boolean @default(false)
+  sortOrder      Int     @default(0)
+  isActive       Boolean @default(true)
 
-  choices         AssessmentChoice[]
+  choices AssessmentChoice[]
 
-  createdBy       String?
-  updatedBy       String?
-  createdAt       DateTime @default(now()) @db.Timestamptz()
-  updatedAt       DateTime @updatedAt @db.Timestamptz()
-  deletedAt       DateTime? @db.Timestamptz()
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime  @default(now()) @db.Timestamptz()
+  updatedAt DateTime  @updatedAt @db.Timestamptz()
+  deletedAt DateTime? @db.Timestamptz()
 }
 
 model AssessmentChoice {
-  id            String   @id @default(cuid())
-  questionId    String
-  question      AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id         String                  @id @default(cuid())
+  questionId String
+  question   CareerDiscoveryQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
-  label         String
-  value         Int
-  sortOrder     Int @default(0)
+  label     String
+  value     Int
+  sortOrder Int    @default(0)
 }
 
 model AssessmentSession {
-  id            String   @id @default(cuid())
-  userId        String
-  stageId       String
-  stage         AssessmentStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  user          User            @relation("UserAssessmentSessions", fields: [userId], references: [id], onDelete: Cascade)
+  id      String          @id @default(cuid())
+  userId  String
+  stageId String
+  stage   AssessmentStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  user    User            @relation("UserAssessmentSessions", fields: [userId], references: [id], onDelete: Cascade)
 
-  status        String   @default("IN_PROGRESS")
-  version       Int      @default(1)
-  startedAt     DateTime @default(now()) @db.Timestamptz()
-  completedAt   DateTime? @db.Timestamptz()
+  status      String    @default("IN_PROGRESS")
+  version     Int       @default(1)
+  startedAt   DateTime  @default(now()) @db.Timestamptz()
+  completedAt DateTime? @db.Timestamptz()
 
-  answers       AssessmentAnswer[]
-  result        AssessmentResult?
+  answers AssessmentAnswer[]
+  result  AssessmentResult?
 }
 
 model AssessmentAnswer {
-  id            String   @id @default(cuid())
-  sessionId     String
-  questionId    String
-  choiceValue   Int
+  id          String @id @default(cuid())
+  sessionId   String
+  questionId  String
+  choiceValue Int
 
-  session       AssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  
+  session AssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
   @@unique([sessionId, questionId])
 }
 
 model AssessmentResult {
-  id               String   @id @default(cuid())
-  sessionId        String   @unique
-  session          AssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id        String            @id @default(cuid())
+  sessionId String            @unique
+  session   AssessmentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   topTraitsJson     Json
   growthAreasJson   Json
   careerMatchesJson Json
-  aiSummary         String?  @db.Text
+  aiSummary         String? @db.Text
 
-  createdAt         DateTime @default(now()) @db.Timestamptz()
+  createdAt DateTime @default(now()) @db.Timestamptz()
 }

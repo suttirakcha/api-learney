@@ -1,10 +1,4 @@
-import {
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class WorkspaceQueryDto {
@@ -45,4 +39,3 @@ export class WorkspaceQueryDto {
   @IsString()
   tab?: string;
 }
-

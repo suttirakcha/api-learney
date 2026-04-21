@@ -282,7 +282,12 @@ export class WorkspaceService {
   }
 
   private getPreviewProvider(url: string, provider?: string) {
-    if (provider && Object.values(PreviewVideoProvider).includes(provider as PreviewVideoProvider)) {
+    if (
+      provider &&
+      Object.values(PreviewVideoProvider).includes(
+        provider as PreviewVideoProvider,
+      )
+    ) {
       return provider as PreviewVideoProvider;
     }
 
@@ -461,7 +466,9 @@ export class WorkspaceService {
         roles,
         permissions,
         preferredWorkspace: user.preferredWorkspace ?? user.role,
-        workspaceLabel: this.getWorkspaceLabel(user.preferredWorkspace ?? user.role),
+        workspaceLabel: this.getWorkspaceLabel(
+          user.preferredWorkspace ?? user.role,
+        ),
         instructorProfile: user.instructorProfile,
         latestInstructorApplication: user.instructorApplications[0] ?? null,
       },
@@ -491,7 +498,9 @@ export class WorkspaceService {
       orderBy: { updatedAt: 'asc' },
     });
 
-    const buckets = this.buildDateBuckets(payments.map((item) => item.updatedAt));
+    const buckets = this.buildDateBuckets(
+      payments.map((item) => item.updatedAt),
+    );
     const revenueMap = new Map<string, number>();
 
     buckets.forEach((bucket) => revenueMap.set(String(bucket.label), 0));
@@ -503,7 +512,10 @@ export class WorkspaceService {
         .padStart(2, '0')}/${(payment.updatedAt.getMonth() + 1)
         .toString()
         .padStart(2, '0')}`;
-      revenueMap.set(label, (revenueMap.get(label) ?? 0) + this.toNumber(payment.amount));
+      revenueMap.set(
+        label,
+        (revenueMap.get(label) ?? 0) + this.toNumber(payment.amount),
+      );
     });
 
     return buckets.map((bucket) => ({
@@ -544,7 +556,10 @@ export class WorkspaceService {
       this.prisma.pendingCourseReview.count({
         where: {
           status: {
-            in: [CourseReviewStatus.PENDING_APPROVAL, CourseReviewStatus.SUBMITTED],
+            in: [
+              CourseReviewStatus.PENDING_APPROVAL,
+              CourseReviewStatus.SUBMITTED,
+            ],
           },
         },
       }),
@@ -574,7 +589,11 @@ export class WorkspaceService {
       this.prisma.aiDraft.count({
         where: {
           status: {
-            in: [AiDraftStatus.AI_GENERATED, AiDraftStatus.ADMIN_REVIEW, AiDraftStatus.EDITED],
+            in: [
+              AiDraftStatus.AI_GENERATED,
+              AiDraftStatus.ADMIN_REVIEW,
+              AiDraftStatus.EDITED,
+            ],
           },
         },
       }),
@@ -645,50 +664,76 @@ export class WorkspaceService {
       }),
     ]);
 
-    const workflowSummary = courseWorkflowBreakdown.reduce<Record<string, number>>(
-      (accumulator, course) => {
-        const label =
-          course.workflowStatus === CourseWorkflowStatus.APPROVED
-            ? 'อนุมัติแล้ว'
-            : course.workflowStatus === CourseWorkflowStatus.REJECTED
-              ? 'ไม่อนุมัติ'
-              : course.workflowStatus === CourseWorkflowStatus.NEEDS_REVISION
-                ? 'ต้องแก้ไข'
-                : course.workflowStatus === CourseWorkflowStatus.PUBLISHED
-                  ? 'เผยแพร่แล้ว'
-                  : course.workflowStatus === CourseWorkflowStatus.PENDING_APPROVAL ||
-                      course.workflowStatus === CourseWorkflowStatus.ADMIN_REVIEW ||
-                      course.workflowStatus === CourseWorkflowStatus.SUBMITTED
-                    ? 'รออนุมัติ'
-                    : 'แบบร่าง';
+    const workflowSummary = courseWorkflowBreakdown.reduce<
+      Record<string, number>
+    >((accumulator, course) => {
+      const label =
+        course.workflowStatus === CourseWorkflowStatus.APPROVED
+          ? 'อนุมัติแล้ว'
+          : course.workflowStatus === CourseWorkflowStatus.REJECTED
+            ? 'ไม่อนุมัติ'
+            : course.workflowStatus === CourseWorkflowStatus.NEEDS_REVISION
+              ? 'ต้องแก้ไข'
+              : course.workflowStatus === CourseWorkflowStatus.PUBLISHED
+                ? 'เผยแพร่แล้ว'
+                : course.workflowStatus ===
+                      CourseWorkflowStatus.PENDING_APPROVAL ||
+                    course.workflowStatus ===
+                      CourseWorkflowStatus.ADMIN_REVIEW ||
+                    course.workflowStatus === CourseWorkflowStatus.SUBMITTED
+                  ? 'รออนุมัติ'
+                  : 'แบบร่าง';
 
-        accumulator[label] = (accumulator[label] ?? 0) + 1;
-        return accumulator;
-      },
-      {},
-    );
+      accumulator[label] = (accumulator[label] ?? 0) + 1;
+      return accumulator;
+    }, {});
 
     return {
       title: 'แดชบอร์ดผู้ดูแลระบบ',
-      description: 'ภาพรวมการใช้งาน รายได้ งานที่ต้องอนุมัติ และกิจกรรมล่าสุดของทั้งระบบ',
+      description:
+        'ภาพรวมการใช้งาน รายได้ งานที่ต้องอนุมัติ และกิจกรรมล่าสุดของทั้งระบบ',
       cards: [
         { key: 'totalUsers', label: 'ผู้ใช้งานทั้งหมด', value: totalUsers },
         { key: 'totalStudents', label: 'ผู้เรียน', value: totalStudents },
         { key: 'totalInstructors', label: 'ผู้สอน', value: totalInstructors },
         { key: 'totalCourses', label: 'คอร์สทั้งหมด', value: totalCourses },
-        { key: 'publishedCourses', label: 'คอร์สที่เผยแพร่แล้ว', value: publishedCourses },
-        { key: 'pendingReviews', label: 'คอร์สที่รออนุมัติ', value: pendingReviews },
-        { key: 'totalRevenue', label: 'รายได้รวม', value: this.toNumber(totalRevenue._sum.amount) },
+        {
+          key: 'publishedCourses',
+          label: 'คอร์สที่เผยแพร่แล้ว',
+          value: publishedCourses,
+        },
+        {
+          key: 'pendingReviews',
+          label: 'คอร์สที่รออนุมัติ',
+          value: pendingReviews,
+        },
+        {
+          key: 'totalRevenue',
+          label: 'รายได้รวม',
+          value: this.toNumber(totalRevenue._sum.amount),
+        },
         {
           key: 'currentMonthRevenue',
           label: 'รายได้เดือนนี้',
           value: this.toNumber(currentMonthRevenue._sum.amount),
         },
         { key: 'ordersCount', label: 'จำนวนออเดอร์', value: ordersCount },
-        { key: 'activePromotions', label: 'โปรโมชันที่ใช้งานอยู่', value: activePromotions },
+        {
+          key: 'activePromotions',
+          label: 'โปรโมชันที่ใช้งานอยู่',
+          value: activePromotions,
+        },
         { key: 'totalReviews', label: 'จำนวนรีวิว', value: totalReviews },
-        { key: 'pendingContent', label: 'คอนเทนต์ที่รอตรวจ', value: pendingContent },
-        { key: 'pendingAiDrafts', label: 'AI Draft ที่รออนุมัติ', value: pendingAiDrafts },
+        {
+          key: 'pendingContent',
+          label: 'คอนเทนต์ที่รอตรวจ',
+          value: pendingContent,
+        },
+        {
+          key: 'pendingAiDrafts',
+          label: 'AI Draft ที่รออนุมัติ',
+          value: pendingAiDrafts,
+        },
       ],
       charts: [
         {
@@ -762,8 +807,18 @@ export class WorkspaceService {
         { key: 'id', label: 'รหัสคอร์ส', type: 'hidden' },
         { key: 'courseName', label: 'ชื่อคอร์ส', type: 'text', required: true },
         { key: 'slug', label: 'Slug', type: 'text', required: true },
-        { key: 'shortDescription', label: 'คำอธิบายสั้น', type: 'textarea', required: true },
-        { key: 'description', label: 'คำอธิบายเต็ม', type: 'textarea', required: true },
+        {
+          key: 'shortDescription',
+          label: 'คำอธิบายสั้น',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'description',
+          label: 'คำอธิบายเต็ม',
+          type: 'textarea',
+          required: true,
+        },
         { key: 'category', label: 'หมวดหมู่', type: 'text', required: true },
         {
           key: 'level',
@@ -839,7 +894,10 @@ export class WorkspaceService {
     };
   }
 
-  private sortRows<T extends Record<string, unknown>>(items: T[], sort?: string) {
+  private sortRows<T extends Record<string, unknown>>(
+    items: T[],
+    sort?: string,
+  ) {
     if (!sort) {
       return items;
     }
@@ -849,7 +907,9 @@ export class WorkspaceService {
     switch (sort) {
       case 'ชื่อ-ก':
         next.sort((left, right) =>
-          String(left.courseName ?? left.title ?? left.fullname ?? '').localeCompare(
+          String(
+            left.courseName ?? left.title ?? left.fullname ?? '',
+          ).localeCompare(
             String(right.courseName ?? right.title ?? right.fullname ?? ''),
             'th',
           ),
@@ -901,7 +961,9 @@ export class WorkspaceService {
           this.applySearch(
             courses
               .filter((course) =>
-                query.status ? this.normalizeCourseStatus(course) === query.status : true,
+                query.status
+                  ? this.normalizeCourseStatus(course) === query.status
+                  : true,
               )
               .filter((course) =>
                 query.category ? course.category === query.category : true,
@@ -918,10 +980,28 @@ export class WorkspaceService {
           title: 'จัดการคอร์ส',
           description: 'สร้าง แก้ไข ลบ คัดลอก และเปลี่ยนสถานะคอร์สของทั้งระบบ',
           cards: [
-            { label: 'แบบร่าง', value: courses.filter((course) => this.normalizeCourseStatus(course) === 'แบบร่าง').length },
-            { label: 'เผยแพร่แล้ว', value: courses.filter((course) => course.isPublished).length },
-            { label: 'รออนุมัติ', value: courses.filter((course) => this.normalizeCourseStatus(course) === 'รออนุมัติ').length },
-            { label: 'ไม่อนุมัติ', value: courses.filter((course) => this.normalizeCourseStatus(course) === 'ไม่อนุมัติ').length },
+            {
+              label: 'แบบร่าง',
+              value: courses.filter(
+                (course) => this.normalizeCourseStatus(course) === 'แบบร่าง',
+              ).length,
+            },
+            {
+              label: 'เผยแพร่แล้ว',
+              value: courses.filter((course) => course.isPublished).length,
+            },
+            {
+              label: 'รออนุมัติ',
+              value: courses.filter(
+                (course) => this.normalizeCourseStatus(course) === 'รออนุมัติ',
+              ).length,
+            },
+            {
+              label: 'ไม่อนุมัติ',
+              value: courses.filter(
+                (course) => this.normalizeCourseStatus(course) === 'ไม่อนุมัติ',
+              ).length,
+            },
           ],
           columns: [
             { key: 'courseName', label: 'ชื่อคอร์ส' },
@@ -946,14 +1026,21 @@ export class WorkspaceService {
               'ปิดรับสมัคร',
               'ซ่อนอยู่',
             ],
-            categoryOptions: Array.from(new Set(courses.map((course) => course.category))).sort(),
+            categoryOptions: Array.from(
+              new Set(courses.map((course) => course.category)),
+            ).sort(),
             sortOptions: ['อัปเดตล่าสุด', 'ชื่อ-ก', 'ยอดมากไปน้อย'],
           },
           rowActions: [
             { key: 'edit', label: 'แก้ไขข้อมูล' },
             { key: 'duplicate_course', label: 'ทำสำเนา' },
             { key: 'update_course_status', label: 'เปลี่ยนสถานะ' },
-            { key: 'delete_course', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_course',
+              label: 'ลบข้อมูล',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           bulkActions: [
             { key: 'bulk_publish', label: 'เผยแพร่ที่เลือก' },
@@ -1001,7 +1088,8 @@ export class WorkspaceService {
 
         return {
           title: 'วิดีโอพรีวิว',
-          description: 'จัดการวิดีโอพรีวิวแบบเพิ่ม แก้ไข ลบ และเปิดปิดการใช้งาน',
+          description:
+            'จัดการวิดีโอพรีวิวแบบเพิ่ม แก้ไข ลบ และเปิดปิดการใช้งาน',
           columns: [
             { key: 'courseName', label: 'คอร์ส' },
             { key: 'title', label: 'ชื่อวิดีโอ' },
@@ -1016,15 +1104,30 @@ export class WorkspaceService {
           rowActions: [
             { key: 'edit', label: 'แก้ไขข้อมูล' },
             { key: 'toggle_preview_video', label: 'เปิด/ปิดการใช้งาน' },
-            { key: 'delete_preview_video', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_preview_video',
+              label: 'ลบข้อมูล',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'save_preview_video',
             submitLabel: 'บันทึกวิดีโอพรีวิว',
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
-              { key: 'courseId', label: 'รหัสคอร์ส', type: 'text', required: true },
-              { key: 'title', label: 'ชื่อวิดีโอ', type: 'text', required: true },
+              {
+                key: 'courseId',
+                label: 'รหัสคอร์ส',
+                type: 'text',
+                required: true,
+              },
+              {
+                key: 'title',
+                label: 'ชื่อวิดีโอ',
+                type: 'text',
+                required: true,
+              },
               {
                 key: 'provider',
                 label: 'ผู้ให้บริการ',
@@ -1045,7 +1148,12 @@ export class WorkspaceService {
               { key: 'url', label: 'ลิงก์วิดีโอ', type: 'url', required: true },
               { key: 'thumbnailUrl', label: 'ภาพปกวิดีโอ', type: 'url' },
               { key: 'description', label: 'คำอธิบาย', type: 'textarea' },
-              { key: 'durationSeconds', label: 'ความยาว (วินาที)', type: 'number', min: 0 },
+              {
+                key: 'durationSeconds',
+                label: 'ความยาว (วินาที)',
+                type: 'number',
+                min: 0,
+              },
               { key: 'isFreePreview', label: 'ให้ดูฟรี', type: 'checkbox' },
               { key: 'active', label: 'เปิดใช้งาน', type: 'checkbox' },
             ],
@@ -1086,7 +1194,9 @@ export class WorkspaceService {
 
         const rows = this.applySearch(
           reviews
-            .filter((review) => (query.status ? review.status === query.status : true))
+            .filter((review) =>
+              query.status ? review.status === query.status : true,
+            )
             .map((review) => ({
               id: review.id,
               courseId: review.courseId,
@@ -1106,7 +1216,8 @@ export class WorkspaceService {
               adminNotes: review.adminNotes ?? '',
               previewVideoCount: review.course.previewVideos.length,
               lastSubmittedAt:
-                review.lastSubmittedAt?.toISOString() ?? review.updatedAt.toISOString(),
+                review.lastSubmittedAt?.toISOString() ??
+                review.updatedAt.toISOString(),
             })),
           query.search,
           ['courseName', 'instructorName', 'status'],
@@ -1115,7 +1226,8 @@ export class WorkspaceService {
 
         return {
           title: 'คอร์สรออนุมัติ',
-          description: 'ตรวจสอบคอร์สจากผู้สอน อนุมัติ ขอแก้ไข หรือปฏิเสธได้จากจุดเดียว',
+          description:
+            'ตรวจสอบคอร์สจากผู้สอน อนุมัติ ขอแก้ไข หรือปฏิเสธได้จากจุดเดียว',
           columns: [
             { key: 'courseName', label: 'คอร์ส' },
             { key: 'instructorName', label: 'ผู้สอน' },
@@ -1129,14 +1241,24 @@ export class WorkspaceService {
           rowActions: [
             { key: 'approve_course_review', label: 'อนุมัติ' },
             { key: 'request_course_changes', label: 'ขอแก้ไขเพิ่มเติม' },
-            { key: 'reject_course_review', label: 'ปฏิเสธ', confirm: true, variant: 'destructive' },
+            {
+              key: 'reject_course_review',
+              label: 'ปฏิเสธ',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'update_course_review',
             submitLabel: 'บันทึกหมายเหตุ',
             fields: [
               { key: 'id', label: 'รหัสรายการ', type: 'hidden' },
-              { key: 'adminNotes', label: 'หมายเหตุถึงผู้สอน', type: 'textarea', required: true },
+              {
+                key: 'adminNotes',
+                label: 'หมายเหตุถึงผู้สอน',
+                type: 'textarea',
+                required: true,
+              },
               {
                 key: 'rejectionTemplate',
                 label: 'เหตุผลสำเร็จรูป',
@@ -1151,7 +1273,12 @@ export class WorkspaceService {
             ],
           },
           filters: {
-            statusOptions: ['รออนุมัติ', 'ต้องแก้ไข', 'อนุมัติแล้ว', 'ไม่อนุมัติ'],
+            statusOptions: [
+              'รออนุมัติ',
+              'ต้องแก้ไข',
+              'อนุมัติแล้ว',
+              'ไม่อนุมัติ',
+            ],
           },
           emptyState: {
             title: 'ไม่มีคอร์สรออนุมัติ',
@@ -1182,17 +1309,18 @@ export class WorkspaceService {
             title: this.parseLocalized(promotion.title, 'โปรโมชัน').th,
             code: promotion.code ?? promotion.promoCode ?? '',
             type: promotion.type,
-            discount:
-              promotion.discountAmount
-                ? this.toNumber(promotion.discountAmount)
-                : this.toNumber(promotion.discount),
+            discount: promotion.discountAmount
+              ? this.toNumber(promotion.discountAmount)
+              : this.toNumber(promotion.discount),
             usageCount: promotion.usages.length,
             active: promotion.active ? 'ใช้งาน' : 'ปิดใช้งาน',
             priority: promotion.priority,
             stackable: promotion.stackable ? 'ซ้อนได้' : 'ซ้อนไม่ได้',
             startDate: promotion.startDate.toISOString(),
             endDate: promotion.endDate.toISOString(),
-            linkedCourses: promotion.courses.map((item) => item.course.courseName).join(', '),
+            linkedCourses: promotion.courses
+              .map((item) => item.course.courseName)
+              .join(', '),
           })),
           query.search,
           ['title', 'code', 'type'],
@@ -1201,11 +1329,27 @@ export class WorkspaceService {
 
         return {
           title: 'โปรโมชัน',
-          description: 'สร้างและจัดการโปรโมชันให้มีผลจริงในระบบชำระเงินและหน้าคอร์ส',
+          description:
+            'สร้างและจัดการโปรโมชันให้มีผลจริงในระบบชำระเงินและหน้าคอร์ส',
           cards: [
-            { label: 'โปรโมชันที่ใช้งานอยู่', value: promotions.filter((item) => item.active).length },
-            { label: 'โปรโมชันใกล้หมดอายุ', value: promotions.filter((item) => item.endDate < new Date(Date.now() + 1000 * 60 * 60 * 24 * 3)).length },
-            { label: 'การใช้งานรวม', value: promotions.reduce((sum, item) => sum + item.usages.length, 0) },
+            {
+              label: 'โปรโมชันที่ใช้งานอยู่',
+              value: promotions.filter((item) => item.active).length,
+            },
+            {
+              label: 'โปรโมชันใกล้หมดอายุ',
+              value: promotions.filter(
+                (item) =>
+                  item.endDate < new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
+              ).length,
+            },
+            {
+              label: 'การใช้งานรวม',
+              value: promotions.reduce(
+                (sum, item) => sum + item.usages.length,
+                0,
+              ),
+            },
           ],
           columns: [
             { key: 'title', label: 'ชื่อโปรโมชัน' },
@@ -1223,14 +1367,24 @@ export class WorkspaceService {
           rowActions: [
             { key: 'edit', label: 'แก้ไขข้อมูล' },
             { key: 'toggle_promotion_active', label: 'เปิด/ปิดการใช้งาน' },
-            { key: 'delete_promotion', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_promotion',
+              label: 'ลบข้อมูล',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'save_promotion',
             submitLabel: 'บันทึกโปรโมชัน',
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
-              { key: 'title', label: 'ชื่อโปรโมชัน', type: 'text', required: true },
+              {
+                key: 'title',
+                label: 'ชื่อโปรโมชัน',
+                type: 'text',
+                required: true,
+              },
               { key: 'slug', label: 'Slug', type: 'text', required: true },
               { key: 'code', label: 'โค้ดส่วนลด', type: 'text' },
               {
@@ -1243,13 +1397,43 @@ export class WorkspaceService {
                   value,
                 })),
               },
-              { key: 'discountAmount', label: 'มูลค่าส่วนลด', type: 'number', min: 0 },
-              { key: 'minimumSpend', label: 'ยอดขั้นต่ำ', type: 'number', min: 0 },
-              { key: 'usageLimit', label: 'จำกัดการใช้งาน', type: 'number', min: 0 },
-              { key: 'perUserLimit', label: 'จำกัดต่อคน', type: 'number', min: 0 },
+              {
+                key: 'discountAmount',
+                label: 'มูลค่าส่วนลด',
+                type: 'number',
+                min: 0,
+              },
+              {
+                key: 'minimumSpend',
+                label: 'ยอดขั้นต่ำ',
+                type: 'number',
+                min: 0,
+              },
+              {
+                key: 'usageLimit',
+                label: 'จำกัดการใช้งาน',
+                type: 'number',
+                min: 0,
+              },
+              {
+                key: 'perUserLimit',
+                label: 'จำกัดต่อคน',
+                type: 'number',
+                min: 0,
+              },
               { key: 'priority', label: 'Priority', type: 'number', min: 0 },
-              { key: 'startDate', label: 'วันที่เริ่ม', type: 'date', required: true },
-              { key: 'endDate', label: 'วันที่สิ้นสุด', type: 'date', required: true },
+              {
+                key: 'startDate',
+                label: 'วันที่เริ่ม',
+                type: 'date',
+                required: true,
+              },
+              {
+                key: 'endDate',
+                label: 'วันที่สิ้นสุด',
+                type: 'date',
+                required: true,
+              },
               { key: 'stackable', label: 'ซ้อนโปรโมชันได้', type: 'checkbox' },
               { key: 'active', label: 'เปิดใช้งาน', type: 'checkbox' },
             ],
@@ -1274,7 +1458,11 @@ export class WorkspaceService {
               theme.activationMode === SeasonalThemeActivationMode.AUTOMATIC
                 ? 'อัตโนมัติ'
                 : 'กำหนดเอง',
-            active: theme.active ? 'ใช้งาน' : theme.previewMode ? 'โหมดพรีวิว' : 'ปิดใช้งาน',
+            active: theme.active
+              ? 'ใช้งาน'
+              : theme.previewMode
+                ? 'โหมดพรีวิว'
+                : 'ปิดใช้งาน',
             startDate: theme.startDate?.toISOString() ?? '',
             endDate: theme.endDate?.toISOString() ?? '',
             primaryColor: theme.primaryColor ?? '',
@@ -1288,7 +1476,8 @@ export class WorkspaceService {
 
         return {
           title: 'ธีมตามเทศกาล',
-          description: 'เพิ่ม แก้ไข ลบ และตั้งช่วงใช้งานของธีมเทศกาลทั้ง light/dark mode',
+          description:
+            'เพิ่ม แก้ไข ลบ และตั้งช่วงใช้งานของธีมเทศกาลทั้ง light/dark mode',
           columns: [
             { key: 'name', label: 'ชื่อธีม' },
             { key: 'key', label: 'คีย์' },
@@ -1304,7 +1493,12 @@ export class WorkspaceService {
           rowActions: [
             { key: 'edit', label: 'แก้ไขข้อมูล' },
             { key: 'activate_theme', label: 'เปิดใช้งาน' },
-            { key: 'delete_theme', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_theme',
+              label: 'ลบข้อมูล',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'save_theme',
@@ -1327,8 +1521,14 @@ export class WorkspaceService {
                 label: 'การเปิดใช้งาน',
                 type: 'select',
                 options: [
-                  { label: 'กำหนดเอง', value: SeasonalThemeActivationMode.MANUAL },
-                  { label: 'อัตโนมัติ', value: SeasonalThemeActivationMode.AUTOMATIC },
+                  {
+                    label: 'กำหนดเอง',
+                    value: SeasonalThemeActivationMode.MANUAL,
+                  },
+                  {
+                    label: 'อัตโนมัติ',
+                    value: SeasonalThemeActivationMode.AUTOMATIC,
+                  },
                 ],
               },
               { key: 'startDate', label: 'วันที่เริ่ม', type: 'date' },
@@ -1363,7 +1563,8 @@ export class WorkspaceService {
 
         return {
           title: 'Analytics',
-          description: 'วิเคราะห์รายได้ ผู้ใช้งาน คอร์ส โปรโมชัน และ retention ของระบบ',
+          description:
+            'วิเคราะห์รายได้ ผู้ใช้งาน คอร์ส โปรโมชัน และ retention ของระบบ',
           tabs: [
             'ภาพรวมระบบ',
             'รายได้',
@@ -1382,10 +1583,11 @@ export class WorkspaceService {
             {
               title: 'ผู้สอนที่มีผู้เรียนสูงสุด',
               value:
-                instructorPerformance
-                  .sort((left, right) =>
-                    (right._sum.learnerCount ?? 0) - (left._sum.learnerCount ?? 0),
-                  )[0]?._sum.learnerCount ?? 0,
+                instructorPerformance.sort(
+                  (left, right) =>
+                    (right._sum.learnerCount ?? 0) -
+                    (left._sum.learnerCount ?? 0),
+                )[0]?._sum.learnerCount ?? 0,
             },
             {
               title: 'ค่าเฉลี่ยคำสั่งซื้อ',
@@ -1412,7 +1614,8 @@ export class WorkspaceService {
 
         return {
           title: 'Settings',
-          description: 'ตั้งค่าทั่วไป SEO ภาษา เวลา การชำระเงิน AI โปรโมชั่น และหน้าแรก',
+          description:
+            'ตั้งค่าทั่วไป SEO ภาษา เวลา การชำระเงิน AI โปรโมชั่น และหน้าแรก',
           groups: settings.map((setting) => ({
             id: setting.id,
             section: setting.section,
@@ -1433,9 +1636,19 @@ export class WorkspaceService {
               { key: 'id', label: 'รหัส', type: 'hidden' },
               { key: 'label', label: 'ชื่อหมวด', type: 'text', required: true },
               { key: 'key', label: 'คีย์', type: 'text', required: true },
-              { key: 'section', label: 'หมวดหลัก', type: 'text', required: true },
+              {
+                key: 'section',
+                label: 'หมวดหลัก',
+                type: 'text',
+                required: true,
+              },
               { key: 'description', label: 'คำอธิบาย', type: 'textarea' },
-              { key: 'value', label: 'ค่าแบบ JSON', type: 'json', required: true },
+              {
+                key: 'value',
+                label: 'ค่าแบบ JSON',
+                type: 'json',
+                required: true,
+              },
             ],
           },
           emptyState: {
@@ -1459,7 +1672,9 @@ export class WorkspaceService {
 
         const rows = this.applySearch(
           queue
-            .filter((item) => (query.status ? item.status === query.status : true))
+            .filter((item) =>
+              query.status ? item.status === query.status : true,
+            )
             .map((item) => ({
               id: item.id,
               contentType: item.contentType,
@@ -1477,7 +1692,8 @@ export class WorkspaceService {
 
         return {
           title: 'Content Review Queue',
-          description: 'ตรวจสอบคำอธิบายคอร์ส บทเรียน รูปภาพ วิดีโอ รีวิว และคอมมูนิตี้',
+          description:
+            'ตรวจสอบคำอธิบายคอร์ส บทเรียน รูปภาพ วิดีโอ รีวิว และคอมมูนิตี้',
           columns: [
             { key: 'contentType', label: 'ประเภทคอนเทนต์' },
             { key: 'sourceModule', label: 'โมดูลต้นทาง' },
@@ -1492,7 +1708,12 @@ export class WorkspaceService {
             { key: 'approve_content_review', label: 'อนุมัติ' },
             { key: 'request_content_changes', label: 'ส่งกลับไปแก้' },
             { key: 'hide_content_review', label: 'ซ่อน' },
-            { key: 'delete_content_review', label: 'ลบ', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_content_review',
+              label: 'ลบ',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           emptyState: {
             title: 'ไม่มีคอนเทนต์รอตรวจ',
@@ -1538,7 +1759,8 @@ export class WorkspaceService {
 
         return {
           title: 'AI Draft Approval',
-          description: 'อนุมัติ ปฏิเสธ แก้ไข และส่งต่อร่างจาก AI เข้าคิวตรวจเนื้อหา',
+          description:
+            'อนุมัติ ปฏิเสธ แก้ไข และส่งต่อร่างจาก AI เข้าคิวตรวจเนื้อหา',
           columns: [
             { key: 'draftType', label: 'ประเภท Draft' },
             { key: 'title', label: 'หัวข้อ' },
@@ -1553,7 +1775,12 @@ export class WorkspaceService {
             { key: 'approve_ai_draft', label: 'อนุมัติ' },
             { key: 'edit_ai_draft', label: 'แก้ไขก่อนอนุมัติ' },
             { key: 'send_ai_draft_to_queue', label: 'ส่งเข้า Content Queue' },
-            { key: 'reject_ai_draft', label: 'ปฏิเสธ', confirm: true, variant: 'destructive' },
+            {
+              key: 'reject_ai_draft',
+              label: 'ปฏิเสธ',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'edit_ai_draft',
@@ -1561,7 +1788,12 @@ export class WorkspaceService {
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
               { key: 'title', label: 'หัวข้อ', type: 'text', required: true },
-              { key: 'content', label: 'เนื้อหา JSON', type: 'json', required: true },
+              {
+                key: 'content',
+                label: 'เนื้อหา JSON',
+                type: 'json',
+                required: true,
+              },
               { key: 'notes', label: 'หมายเหตุ', type: 'textarea' },
             ],
           },
@@ -1642,7 +1874,12 @@ export class WorkspaceService {
           rowActions: [
             { key: 'edit', label: 'แก้ไขข้อมูล' },
             { key: 'toggle_exercise_status', label: 'เปิด/ปิดการใช้งาน' },
-            { key: 'delete_exercise', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_exercise',
+              label: 'ลบข้อมูล',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'save_exercise',
@@ -1650,9 +1887,24 @@ export class WorkspaceService {
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
               { key: 'courseId', label: 'รหัสคอร์ส', type: 'text' },
-              { key: 'title', label: 'ชื่อแบบฝึก', type: 'text', required: true },
-              { key: 'description', label: 'คำอธิบาย', type: 'textarea', required: true },
-              { key: 'category', label: 'หมวดหมู่', type: 'text', required: true },
+              {
+                key: 'title',
+                label: 'ชื่อแบบฝึก',
+                type: 'text',
+                required: true,
+              },
+              {
+                key: 'description',
+                label: 'คำอธิบาย',
+                type: 'textarea',
+                required: true,
+              },
+              {
+                key: 'category',
+                label: 'หมวดหมู่',
+                type: 'text',
+                required: true,
+              },
               {
                 key: 'difficulty',
                 label: 'ความยาก',
@@ -1664,20 +1916,45 @@ export class WorkspaceService {
                 ],
               },
               { key: 'score', label: 'คะแนนเต็ม', type: 'number', min: 1 },
-              { key: 'timeLimitMinutes', label: 'เวลา (นาที)', type: 'number', min: 0 },
-              { key: 'passingScore', label: 'คะแนนผ่าน', type: 'number', min: 0 },
-              { key: 'randomizeQuestions', label: 'สุ่มคำถาม', type: 'checkbox' },
+              {
+                key: 'timeLimitMinutes',
+                label: 'เวลา (นาที)',
+                type: 'number',
+                min: 0,
+              },
+              {
+                key: 'passingScore',
+                label: 'คะแนนผ่าน',
+                type: 'number',
+                min: 0,
+              },
+              {
+                key: 'randomizeQuestions',
+                label: 'สุ่มคำถาม',
+                type: 'checkbox',
+              },
               {
                 key: 'placement',
                 label: 'ตำแหน่งการแสดง',
                 type: 'select',
                 options: [
-                  { label: 'ก่อนเรียน', value: SkillExercisePlacement.BEFORE_LEARNING },
-                  { label: 'หลังเรียน', value: SkillExercisePlacement.AFTER_LEARNING },
+                  {
+                    label: 'ก่อนเรียน',
+                    value: SkillExercisePlacement.BEFORE_LEARNING,
+                  },
+                  {
+                    label: 'หลังเรียน',
+                    value: SkillExercisePlacement.AFTER_LEARNING,
+                  },
                   { label: 'ทางเลือก', value: SkillExercisePlacement.OPTIONAL },
                 ],
               },
-              { key: 'questions', label: 'คำถาม JSON', type: 'json', required: true },
+              {
+                key: 'questions',
+                label: 'คำถาม JSON',
+                type: 'json',
+                required: true,
+              },
             ],
           },
           emptyState: {
@@ -1712,7 +1989,11 @@ export class WorkspaceService {
             email: user.email,
             role: user.role,
             roles: normalizeRoles(user.role, user.roles).join(', '),
-            status: user.isSuspended ? 'ระงับ' : user.isActive ? 'ใช้งาน' : 'ปิดใช้งาน',
+            status: user.isSuspended
+              ? 'ระงับ'
+              : user.isActive
+                ? 'ใช้งาน'
+                : 'ปิดใช้งาน',
             enrolledCourses: user.enrolledCourses.length,
             orders: user.payments.length,
             createdAt: user.createdAt.toISOString(),
@@ -1724,7 +2005,8 @@ export class WorkspaceService {
 
         return {
           title: 'จัดการผู้ใช้งาน',
-          description: 'เพิ่ม แก้ไข ลบ ระงับบัญชี และดูประวัติคำสั่งซื้อของผู้ใช้',
+          description:
+            'เพิ่ม แก้ไข ลบ ระงับบัญชี และดูประวัติคำสั่งซื้อของผู้ใช้',
           columns: [
             { key: 'fullname', label: 'ชื่อ' },
             { key: 'email', label: 'อีเมล' },
@@ -1740,14 +2022,24 @@ export class WorkspaceService {
             { key: 'edit', label: 'แก้ไขข้อมูล' },
             { key: 'suspend_user', label: 'ระงับบัญชี' },
             { key: 'activate_user', label: 'เปิดใช้งาน' },
-            { key: 'delete_user', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_user',
+              label: 'ลบข้อมูล',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'save_user',
             submitLabel: 'บันทึกผู้ใช้งาน',
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
-              { key: 'fullname', label: 'ชื่อ-นามสกุล', type: 'text', required: true },
+              {
+                key: 'fullname',
+                label: 'ชื่อ-นามสกุล',
+                type: 'text',
+                required: true,
+              },
               { key: 'email', label: 'อีเมล', type: 'email', required: true },
               { key: 'password', label: 'รหัสผ่าน', type: 'password' },
               {
@@ -1795,7 +2087,9 @@ export class WorkspaceService {
               0,
             );
             const totalRevenue = profile.user.courses.reduce(
-              (sum, course) => sum + course.enrolledCourses.length * this.toNumber(course.price),
+              (sum, course) =>
+                sum +
+                course.enrolledCourses.length * this.toNumber(course.price),
               0,
             );
 
@@ -1838,8 +2132,18 @@ export class WorkspaceService {
             submitLabel: 'บันทึกข้อมูลผู้สอน',
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
-              { key: 'displayName', label: 'ชื่อแสดงผล', type: 'text', required: true },
-              { key: 'bio', label: 'ประวัติย่อ', type: 'textarea', required: true },
+              {
+                key: 'displayName',
+                label: 'ชื่อแสดงผล',
+                type: 'text',
+                required: true,
+              },
+              {
+                key: 'bio',
+                label: 'ประวัติย่อ',
+                type: 'textarea',
+                required: true,
+              },
               { key: 'specialties', label: 'ความเชี่ยวชาญ', type: 'tags' },
               { key: 'portfolioUrl', label: 'ลิงก์ผลงาน', type: 'url' },
               { key: 'contactEmail', label: 'อีเมลติดต่อ', type: 'email' },
@@ -1877,7 +2181,8 @@ export class WorkspaceService {
             status:
               application.status === InstructorApplicationStatus.APPROVED
                 ? 'อนุมัติแล้ว'
-                : application.status === InstructorApplicationStatus.NEEDS_CHANGES
+                : application.status ===
+                    InstructorApplicationStatus.NEEDS_CHANGES
                   ? 'ต้องแก้ไขข้อมูล'
                   : application.status === InstructorApplicationStatus.REJECTED
                     ? 'ปฏิเสธ'
@@ -1905,15 +2210,28 @@ export class WorkspaceService {
           pagination: paged.pagination,
           rowActions: [
             { key: 'approve_instructor_application', label: 'อนุมัติ' },
-            { key: 'request_instructor_application_changes', label: 'ขอแก้ไขข้อมูล' },
-            { key: 'reject_instructor_application', label: 'ปฏิเสธ', confirm: true, variant: 'destructive' },
+            {
+              key: 'request_instructor_application_changes',
+              label: 'ขอแก้ไขข้อมูล',
+            },
+            {
+              key: 'reject_instructor_application',
+              label: 'ปฏิเสธ',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'update_instructor_application',
             submitLabel: 'บันทึกหมายเหตุ',
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
-              { key: 'adminNotes', label: 'หมายเหตุ', type: 'textarea', required: true },
+              {
+                key: 'adminNotes',
+                label: 'หมายเหตุ',
+                type: 'textarea',
+                required: true,
+              },
             ],
           },
           emptyState: {
@@ -1948,7 +2266,8 @@ export class WorkspaceService {
 
         return {
           title: 'การแจ้งเตือนผู้ดูแลระบบ',
-          description: 'รวมการแจ้งเตือนสำคัญ เช่น คอร์สรออนุมัติ คำขอผู้สอน และ AI Draft',
+          description:
+            'รวมการแจ้งเตือนสำคัญ เช่น คอร์สรออนุมัติ คำขอผู้สอน และ AI Draft',
           columns: [
             { key: 'title', label: 'หัวข้อ' },
             { key: 'body', label: 'รายละเอียด' },
@@ -1958,7 +2277,12 @@ export class WorkspaceService {
           ],
           items: rows.items,
           pagination: rows.pagination,
-          rowActions: [{ key: 'mark_notification_read', label: 'ทำเครื่องหมายว่าอ่านแล้ว' }],
+          rowActions: [
+            {
+              key: 'mark_notification_read',
+              label: 'ทำเครื่องหมายว่าอ่านแล้ว',
+            },
+          ],
         };
       }
 
@@ -1967,7 +2291,10 @@ export class WorkspaceService {
     }
   }
 
-  private async getInstructorCoursesSection(userId: string, query: WorkspaceQueryDto) {
+  private async getInstructorCoursesSection(
+    userId: string,
+    query: WorkspaceQueryDto,
+  ) {
     const courses = await this.prisma.course.findMany({
       where: { instructorId: userId },
       include: {
@@ -2012,59 +2339,86 @@ export class WorkspaceService {
         { key: 'edit', label: 'แก้ไขข้อมูล' },
         { key: 'submit_course_review', label: 'ส่งตรวจ' },
         { key: 'duplicate_course', label: 'ทำสำเนา' },
-        { key: 'delete_own_course', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+        {
+          key: 'delete_own_course',
+          label: 'ลบข้อมูล',
+          confirm: true,
+          variant: 'destructive',
+        },
       ],
       form: this.buildCourseForm(),
     };
   }
 
   async getInstructorOverview(userId: string) {
-    const [courses, reviews, notifications, pendingReviews] = await Promise.all([
-      this.prisma.course.findMany({
-        where: { instructorId: userId },
-        include: {
-          enrolledCourses: true,
-        },
-      }),
-      this.prisma.review.findMany({
-        where: {
-          course: {
-            instructorId: userId,
+    const [courses, reviews, notifications, pendingReviews] = await Promise.all(
+      [
+        this.prisma.course.findMany({
+          where: { instructorId: userId },
+          include: {
+            enrolledCourses: true,
           },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-      }),
-      this.prisma.notificationLog.findMany({
-        where: {
-          OR: [
-            { recipientId: userId },
-            { audience: NotificationAudience.INSTRUCTOR },
-          ],
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 8,
-      }),
-      this.prisma.pendingCourseReview.findMany({
-        where: { instructorId: userId },
-        orderBy: { updatedAt: 'desc' },
-      }),
-    ]);
+        }),
+        this.prisma.review.findMany({
+          where: {
+            course: {
+              instructorId: userId,
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        }),
+        this.prisma.notificationLog.findMany({
+          where: {
+            OR: [
+              { recipientId: userId },
+              { audience: NotificationAudience.INSTRUCTOR },
+            ],
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 8,
+        }),
+        this.prisma.pendingCourseReview.findMany({
+          where: { instructorId: userId },
+          orderBy: { updatedAt: 'desc' },
+        }),
+      ],
+    );
 
     const totalRevenue = courses.reduce(
-      (sum, course) => sum + course.enrolledCourses.length * this.toNumber(course.price),
+      (sum, course) =>
+        sum + course.enrolledCourses.length * this.toNumber(course.price),
       0,
     );
 
     return {
       title: 'แดชบอร์ดผู้สอน',
-      description: 'ภาพรวมคอร์ส นักเรียน รายได้ รีวิวล่าสุด และงานที่ต้องดำเนินการ',
+      description:
+        'ภาพรวมคอร์ส นักเรียน รายได้ รีวิวล่าสุด และงานที่ต้องดำเนินการ',
       cards: [
         { label: 'คอร์สทั้งหมดของฉัน', value: courses.length },
-        { label: 'คอร์สที่เผยแพร่แล้ว', value: courses.filter((course) => course.isPublished).length },
-        { label: 'คอร์สที่รออนุมัติ', value: pendingReviews.filter((item) => item.status === CourseReviewStatus.PENDING_APPROVAL || item.status === CourseReviewStatus.SUBMITTED).length },
-        { label: 'คอร์สที่ต้องแก้ไข', value: pendingReviews.filter((item) => item.status === CourseReviewStatus.NEEDS_REVISION).length },
-        { label: 'จำนวนนักเรียนรวม', value: courses.reduce((sum, course) => sum + course.learnerCount, 0) },
+        {
+          label: 'คอร์สที่เผยแพร่แล้ว',
+          value: courses.filter((course) => course.isPublished).length,
+        },
+        {
+          label: 'คอร์สที่รออนุมัติ',
+          value: pendingReviews.filter(
+            (item) =>
+              item.status === CourseReviewStatus.PENDING_APPROVAL ||
+              item.status === CourseReviewStatus.SUBMITTED,
+          ).length,
+        },
+        {
+          label: 'คอร์สที่ต้องแก้ไข',
+          value: pendingReviews.filter(
+            (item) => item.status === CourseReviewStatus.NEEDS_REVISION,
+          ).length,
+        },
+        {
+          label: 'จำนวนนักเรียนรวม',
+          value: courses.reduce((sum, course) => sum + course.learnerCount, 0),
+        },
         { label: 'รายได้รวม', value: totalRevenue },
       ],
       charts: [
@@ -2253,7 +2607,12 @@ export class WorkspaceService {
           rowActions: [
             { key: 'edit', label: 'แก้ไขข้อมูล' },
             { key: 'toggle_exercise_status', label: 'เปิด/ปิดการใช้งาน' },
-            { key: 'delete_exercise', label: 'ลบข้อมูล', confirm: true, variant: 'destructive' },
+            {
+              key: 'delete_exercise',
+              label: 'ลบข้อมูล',
+              confirm: true,
+              variant: 'destructive',
+            },
           ],
           form: {
             action: 'save_exercise',
@@ -2261,10 +2620,30 @@ export class WorkspaceService {
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
               { key: 'courseId', label: 'รหัสคอร์ส', type: 'text' },
-              { key: 'title', label: 'ชื่อแบบฝึก', type: 'text', required: true },
-              { key: 'description', label: 'คำอธิบาย', type: 'textarea', required: true },
-              { key: 'category', label: 'หมวดหมู่', type: 'text', required: true },
-              { key: 'questions', label: 'คำถาม JSON', type: 'json', required: true },
+              {
+                key: 'title',
+                label: 'ชื่อแบบฝึก',
+                type: 'text',
+                required: true,
+              },
+              {
+                key: 'description',
+                label: 'คำอธิบาย',
+                type: 'textarea',
+                required: true,
+              },
+              {
+                key: 'category',
+                label: 'หมวดหมู่',
+                type: 'text',
+                required: true,
+              },
+              {
+                key: 'questions',
+                label: 'คำถาม JSON',
+                type: 'json',
+                required: true,
+              },
             ],
           },
         };
@@ -2303,7 +2682,12 @@ export class WorkspaceService {
           ],
           items: rows.items,
           pagination: rows.pagination,
-          rowActions: [{ key: 'mark_notification_read', label: 'ทำเครื่องหมายว่าอ่านแล้ว' }],
+          rowActions: [
+            {
+              key: 'mark_notification_read',
+              label: 'ทำเครื่องหมายว่าอ่านแล้ว',
+            },
+          ],
         };
       }
       case 'profile': {
@@ -2313,15 +2697,26 @@ export class WorkspaceService {
 
         return {
           title: 'โปรไฟล์ผู้สอน',
-          description: 'แก้ไขข้อมูลสาธารณะ ความเชี่ยวชาญ ลิงก์ผลงาน และข้อมูลการรับเงิน',
+          description:
+            'แก้ไขข้อมูลสาธารณะ ความเชี่ยวชาญ ลิงก์ผลงาน และข้อมูลการรับเงิน',
           item: profile,
           form: {
             action: 'save_instructor_profile',
             submitLabel: 'บันทึกโปรไฟล์ผู้สอน',
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
-              { key: 'displayName', label: 'ชื่อแสดงผล', type: 'text', required: true },
-              { key: 'bio', label: 'ประวัติ', type: 'textarea', required: true },
+              {
+                key: 'displayName',
+                label: 'ชื่อแสดงผล',
+                type: 'text',
+                required: true,
+              },
+              {
+                key: 'bio',
+                label: 'ประวัติ',
+                type: 'textarea',
+                required: true,
+              },
               { key: 'specialties', label: 'ความเชี่ยวชาญ', type: 'tags' },
               { key: 'portfolioUrl', label: 'ลิงก์ผลงาน', type: 'url' },
               { key: 'contactEmail', label: 'อีเมลติดต่อ', type: 'email' },
@@ -2337,71 +2732,78 @@ export class WorkspaceService {
   }
 
   async getStudentOverview(userId: string) {
-    const [enrollments, wishlist, payments, notifications, certificates, attempts] =
-      await Promise.all([
-        this.prisma.enrolledCourse.findMany({
-          where: { userId },
-          include: {
-            course: {
-              include: {
-                instructor: {
-                  select: {
-                    fullname: true,
-                  },
+    const [
+      enrollments,
+      wishlist,
+      payments,
+      notifications,
+      certificates,
+      attempts,
+    ] = await Promise.all([
+      this.prisma.enrolledCourse.findMany({
+        where: { userId },
+        include: {
+          course: {
+            include: {
+              instructor: {
+                select: {
+                  fullname: true,
                 },
               },
             },
           },
-        }),
-        this.prisma.wishlist.findUnique({
-          where: { userId },
-          include: {
-            items: {
-              include: {
-                course: true,
-              },
+        },
+      }),
+      this.prisma.wishlist.findUnique({
+        where: { userId },
+        include: {
+          items: {
+            include: {
+              course: true,
             },
           },
-        }),
-        this.prisma.payment.findMany({
-          where: {
-            userId,
-            status: PaymentStatus.SUCCESS,
-          },
-          orderBy: { updatedAt: 'desc' },
-        }),
-        this.prisma.notificationLog.findMany({
-          where: {
-            OR: [
-              { recipientId: userId },
-              { audience: NotificationAudience.STUDENT },
-            ],
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 8,
-        }),
-        this.prisma.course.findMany({
-          where: {
-            enrolledCourses: {
-              some: {
-                userId,
-              },
+        },
+      }),
+      this.prisma.payment.findMany({
+        where: {
+          userId,
+          status: PaymentStatus.SUCCESS,
+        },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      this.prisma.notificationLog.findMany({
+        where: {
+          OR: [
+            { recipientId: userId },
+            { audience: NotificationAudience.STUDENT },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+      }),
+      this.prisma.course.findMany({
+        where: {
+          enrolledCourses: {
+            some: {
+              userId,
             },
-            certificateEnabled: true,
           },
-          select: {
-            id: true,
-            courseName: true,
-          },
-        }),
-        this.prisma.skillExerciseAttempt.findMany({
-          where: { userId },
-        }),
-      ]);
+          certificateEnabled: true,
+        },
+        select: {
+          id: true,
+          courseName: true,
+        },
+      }),
+      this.prisma.skillExerciseAttempt.findMany({
+        where: { userId },
+      }),
+    ]);
 
     return {
       title: 'แดชบอร์ดผู้เรียน',
-      description: 'คอร์สของฉัน คอร์สที่เรียนล่าสุด คะแนนแบบฝึก ใบรับรอง และกิจกรรมล่าสุด',
+      description:
+        'คอร์สของฉัน คอร์สที่เรียนล่าสุด คะแนนแบบฝึก ใบรับรอง และกิจกรรมล่าสุด',
       cards: [
         { label: 'คอร์สของฉัน', value: enrollments.length },
         { label: 'คอร์สที่บันทึกไว้', value: wishlist?.items.length ?? 0 },
@@ -2472,8 +2874,10 @@ export class WorkspaceService {
             courseName: enrollment.course.courseName,
             instructorName: enrollment.course.instructor.fullname,
             category: enrollment.course.category,
-            progress: Math.min(100, 40 + enrollment.course.learnerCount % 60),
-            status: enrollment.course.isPublished ? 'กำลังเรียน' : 'รอเริ่มเรียน',
+            progress: Math.min(100, 40 + (enrollment.course.learnerCount % 60)),
+            status: enrollment.course.isPublished
+              ? 'กำลังเรียน'
+              : 'รอเริ่มเรียน',
           })),
           query,
         );
@@ -2539,7 +2943,9 @@ export class WorkspaceService {
             id: item.course.id,
             courseName: item.course.courseName,
             category: item.course.category,
-            price: this.toNumber(item.course.discountPrice ?? item.course.price),
+            price: this.toNumber(
+              item.course.discountPrice ?? item.course.price,
+            ),
             status: item.course.isPublished ? 'พร้อมเรียน' : 'ยังไม่เผยแพร่',
           })),
           query,
@@ -2686,7 +3092,8 @@ export class WorkspaceService {
 
         return {
           title: 'การแจ้งเตือน',
-          description: 'แจ้งเตือนการซื้อคอร์ส โปรโมชัน ใบรับรอง และกิจกรรมจากผู้สอน',
+          description:
+            'แจ้งเตือนการซื้อคอร์ส โปรโมชัน ใบรับรอง และกิจกรรมจากผู้สอน',
           columns: [
             { key: 'title', label: 'หัวข้อ' },
             { key: 'body', label: 'รายละเอียด' },
@@ -2696,7 +3103,12 @@ export class WorkspaceService {
           ],
           items: rows.items,
           pagination: rows.pagination,
-          rowActions: [{ key: 'mark_notification_read', label: 'ทำเครื่องหมายว่าอ่านแล้ว' }],
+          rowActions: [
+            {
+              key: 'mark_notification_read',
+              label: 'ทำเครื่องหมายว่าอ่านแล้ว',
+            },
+          ],
         };
       }
       case 'become-instructor': {
@@ -2707,21 +3119,55 @@ export class WorkspaceService {
 
         return {
           title: 'สมัครเป็นผู้สอน',
-          description: 'กรอกข้อมูลโปรไฟล์ ความเชี่ยวชาญ ประสบการณ์ และช่องทางรับเงินเพื่อยื่นสมัคร',
+          description:
+            'กรอกข้อมูลโปรไฟล์ ความเชี่ยวชาญ ประสบการณ์ และช่องทางรับเงินเพื่อยื่นสมัคร',
           item: application,
           form: {
             action: 'submit_instructor_application',
             submitLabel: application ? 'อัปเดตคำขอสมัคร' : 'ส่งคำขอสมัคร',
             fields: [
               { key: 'id', label: 'รหัส', type: 'hidden' },
-              { key: 'displayName', label: 'ชื่อที่ใช้แสดง', type: 'text', required: true },
-              { key: 'shortBio', label: 'ประวัติย่อ', type: 'textarea', required: true },
-              { key: 'expertise', label: 'ความเชี่ยวชาญ', type: 'tags', required: true },
-              { key: 'teachingCategories', label: 'หมวดหมู่ที่สอน', type: 'tags', required: true },
-              { key: 'experienceYears', label: 'ประสบการณ์ (ปี)', type: 'number', min: 0 },
+              {
+                key: 'displayName',
+                label: 'ชื่อที่ใช้แสดง',
+                type: 'text',
+                required: true,
+              },
+              {
+                key: 'shortBio',
+                label: 'ประวัติย่อ',
+                type: 'textarea',
+                required: true,
+              },
+              {
+                key: 'expertise',
+                label: 'ความเชี่ยวชาญ',
+                type: 'tags',
+                required: true,
+              },
+              {
+                key: 'teachingCategories',
+                label: 'หมวดหมู่ที่สอน',
+                type: 'tags',
+                required: true,
+              },
+              {
+                key: 'experienceYears',
+                label: 'ประสบการณ์ (ปี)',
+                type: 'number',
+                min: 0,
+              },
               { key: 'portfolioUrl', label: 'ลิงก์ผลงาน', type: 'url' },
-              { key: 'payoutAccount', label: 'บัญชีรับเงิน / ช่องทางติดต่อ', type: 'text' },
-              { key: 'identityDocumentUrl', label: 'เอกสารยืนยันตัวตน', type: 'url' },
+              {
+                key: 'payoutAccount',
+                label: 'บัญชีรับเงิน / ช่องทางติดต่อ',
+                type: 'text',
+              },
+              {
+                key: 'identityDocumentUrl',
+                label: 'เอกสารยืนยันตัวตน',
+                type: 'url',
+              },
             ],
           },
         };
@@ -2739,7 +3185,12 @@ export class WorkspaceService {
             action: 'save_student_profile',
             submitLabel: 'บันทึกโปรไฟล์',
             fields: [
-              { key: 'fullname', label: 'ชื่อ-นามสกุล', type: 'text', required: true },
+              {
+                key: 'fullname',
+                label: 'ชื่อ-นามสกุล',
+                type: 'text',
+                required: true,
+              },
               { key: 'email', label: 'อีเมล', type: 'email', required: true },
               { key: 'phone', label: 'เบอร์โทร', type: 'text' },
               { key: 'image', label: 'รูปโปรไฟล์', type: 'url' },
@@ -2771,7 +3222,9 @@ export class WorkspaceService {
     }
 
     if (discountPrice !== null && discountPrice > price) {
-      throw new BadRequestException('discountPrice must be less than or equal to price');
+      throw new BadRequestException(
+        'discountPrice must be less than or equal to price',
+      );
     }
 
     return {
@@ -2813,9 +3266,13 @@ export class WorkspaceService {
       courseName: data.courseName,
       slug: data.slug,
       title: this.localizedInput(data.courseName) as Prisma.InputJsonValue,
-      shortDescription: this.localizedInput(data.shortDescription) as Prisma.InputJsonValue,
+      shortDescription: this.localizedInput(
+        data.shortDescription,
+      ) as Prisma.InputJsonValue,
       description: data.description,
-      localizedDescription: this.localizedInput(data.description) as Prisma.InputJsonValue,
+      localizedDescription: this.localizedInput(
+        data.description,
+      ) as Prisma.InputJsonValue,
       category: data.category,
       thumbnail: data.thumbnail,
       price: this.toDecimal(data.price),
@@ -2907,7 +3364,9 @@ export class WorkspaceService {
     }
 
     if (mode === 'instructor' && course.instructorId !== actorId) {
-      throw new BadRequestException('You cannot manage preview videos for this course');
+      throw new BadRequestException(
+        'You cannot manage preview videos for this course',
+      );
     }
 
     const videoData = {
@@ -2957,11 +3416,16 @@ export class WorkspaceService {
     return video;
   }
 
-  private async savePromotion(actorId: string, payload: Record<string, unknown>) {
+  private async savePromotion(
+    actorId: string,
+    payload: Record<string, unknown>,
+  ) {
     const title = this.ensureString(payload.title, 'title');
     const slug = this.slugify(this.ensureString(payload.slug, 'slug'));
     const type = this.ensureString(payload.type, 'type') as PromotionType;
-    const startDate = new Date(this.ensureString(payload.startDate, 'startDate'));
+    const startDate = new Date(
+      this.ensureString(payload.startDate, 'startDate'),
+    );
     const endDate = new Date(this.ensureString(payload.endDate, 'endDate'));
 
     if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
@@ -2969,7 +3433,9 @@ export class WorkspaceService {
     }
 
     if (startDate > endDate) {
-      throw new BadRequestException('Promotion startDate must be before endDate');
+      throw new BadRequestException(
+        'Promotion startDate must be before endDate',
+      );
     }
 
     const id = typeof payload.id === 'string' ? payload.id : '';
@@ -2989,7 +3455,8 @@ export class WorkspaceService {
         payload.discountAmount !== undefined
           ? this.toDecimal(payload.discountAmount)
           : null,
-      discount: this.toNumber(payload.discountAmount || payload.discount) || null,
+      discount:
+        this.toNumber(payload.discountAmount || payload.discount) || null,
       code:
         typeof payload.code === 'string' && payload.code.trim()
           ? payload.code.trim().toUpperCase()
@@ -3163,7 +3630,9 @@ export class WorkspaceService {
             label,
             section: section as never,
             description:
-              typeof payload.description === 'string' ? payload.description : null,
+              typeof payload.description === 'string'
+                ? payload.description
+                : null,
             value,
             updatedById: actorId,
           },
@@ -3174,7 +3643,9 @@ export class WorkspaceService {
             label,
             section: section as never,
             description:
-              typeof payload.description === 'string' ? payload.description : null,
+              typeof payload.description === 'string'
+                ? payload.description
+                : null,
             value,
             updatedById: actorId,
           },
@@ -3191,8 +3662,15 @@ export class WorkspaceService {
     const category = this.ensureString(payload.category, 'category');
     const id = typeof payload.id === 'string' ? payload.id : '';
     const courseId =
-      typeof payload.courseId === 'string' && payload.courseId ? payload.courseId : null;
-    const instructorId = mode === 'instructor' ? actorId : typeof payload.instructorId === 'string' ? payload.instructorId : actorId;
+      typeof payload.courseId === 'string' && payload.courseId
+        ? payload.courseId
+        : null;
+    const instructorId =
+      mode === 'instructor'
+        ? actorId
+        : typeof payload.instructorId === 'string'
+          ? payload.instructorId
+          : actorId;
     const questionsValue = payload.questions;
     const questions =
       typeof questionsValue === 'string'
@@ -3259,7 +3737,9 @@ export class WorkspaceService {
             ? Prisma.JsonNull
             : (question.answerKey as Prisma.InputJsonValue),
         explanation:
-          typeof question.explanation === 'string' ? question.explanation : null,
+          typeof question.explanation === 'string'
+            ? question.explanation
+            : null,
         points: this.toNumber(question.points) || 1,
         order: this.toNumber(question.order) || index + 1,
       })),
@@ -3358,8 +3838,8 @@ export class WorkspaceService {
     const userId =
       mode === 'instructor'
         ? actorId
-        : existing?.userId ??
-          (typeof payload.userId === 'string' ? payload.userId : actorId);
+        : (existing?.userId ??
+          (typeof payload.userId === 'string' ? payload.userId : actorId));
 
     if (mode === 'instructor' && existing && existing.userId !== actorId) {
       throw new BadRequestException('You cannot edit this instructor profile');
@@ -3380,7 +3860,9 @@ export class WorkspaceService {
       contactEmail:
         typeof payload.contactEmail === 'string' ? payload.contactEmail : null,
       payoutAccount:
-        typeof payload.payoutAccount === 'string' ? payload.payoutAccount : null,
+        typeof payload.payoutAccount === 'string'
+          ? payload.payoutAccount
+          : null,
       visible: payload.visible === undefined ? true : Boolean(payload.visible),
     };
 
@@ -3415,7 +3897,9 @@ export class WorkspaceService {
     const teachingCategories = this.ensureArray(payload.teachingCategories);
 
     if (!expertise.length || !teachingCategories.length) {
-      throw new BadRequestException('expertise and teachingCategories are required');
+      throw new BadRequestException(
+        'expertise and teachingCategories are required',
+      );
     }
 
     const latest = await this.prisma.instructorApplication.findFirst({
@@ -3433,16 +3917,22 @@ export class WorkspaceService {
       portfolioUrl:
         typeof payload.portfolioUrl === 'string' ? payload.portfolioUrl : null,
       payoutAccount:
-        typeof payload.payoutAccount === 'string' ? payload.payoutAccount : null,
+        typeof payload.payoutAccount === 'string'
+          ? payload.payoutAccount
+          : null,
       contactChannel:
-        typeof payload.payoutAccount === 'string' ? payload.payoutAccount : null,
+        typeof payload.payoutAccount === 'string'
+          ? payload.payoutAccount
+          : null,
       identityDocumentUrl:
         typeof payload.identityDocumentUrl === 'string'
           ? payload.identityDocumentUrl
           : null,
       status: InstructorApplicationStatus.PENDING,
       applicantNotes:
-        typeof payload.applicantNotes === 'string' ? payload.applicantNotes : null,
+        typeof payload.applicantNotes === 'string'
+          ? payload.applicantNotes
+          : null,
     };
 
     const application = latest
@@ -3491,7 +3981,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'delete_course') {
-          const courseId = this.ensureString(payload.id ?? payload.courseId, 'courseId');
+          const courseId = this.ensureString(
+            payload.id ?? payload.courseId,
+            'courseId',
+          );
           await this.prisma.course.delete({ where: { id: courseId } });
           await this.createAuditLog({
             actorId: adminId,
@@ -3505,8 +3998,13 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'duplicate_course') {
-          const courseId = this.ensureString(payload.id ?? payload.courseId, 'courseId');
-          const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+          const courseId = this.ensureString(
+            payload.id ?? payload.courseId,
+            'courseId',
+          );
+          const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+          });
           if (!course) {
             throw new NotFoundException('Course not found');
           }
@@ -3583,7 +4081,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'update_course_status') {
-          const courseId = this.ensureString(payload.id ?? payload.courseId, 'courseId');
+          const courseId = this.ensureString(
+            payload.id ?? payload.courseId,
+            'courseId',
+          );
           const status = this.ensureString(payload.status, 'status');
           const nextData: Prisma.CourseUpdateInput = {};
 
@@ -3641,7 +4142,10 @@ export class WorkspaceService {
       }
 
       case 'course-approvals': {
-        const reviewId = this.ensureString(payload.id ?? payload.reviewId, 'reviewId');
+        const reviewId = this.ensureString(
+          payload.id ?? payload.reviewId,
+          'reviewId',
+        );
         const review = await this.prisma.pendingCourseReview.findUnique({
           where: { id: reviewId },
           include: {
@@ -3661,7 +4165,9 @@ export class WorkspaceService {
               reviewedAt: new Date(),
               approvedAt: new Date(),
               adminNotes:
-                typeof payload.adminNotes === 'string' ? payload.adminNotes : review.adminNotes,
+                typeof payload.adminNotes === 'string'
+                  ? payload.adminNotes
+                  : review.adminNotes,
             },
           });
           await this.prisma.course.update({
@@ -3687,7 +4193,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'request_course_changes') {
-          const adminNotes = this.ensureString(payload.adminNotes, 'adminNotes');
+          const adminNotes = this.ensureString(
+            payload.adminNotes,
+            'adminNotes',
+          );
           await this.prisma.pendingCourseReview.update({
             where: { id: reviewId },
             data: {
@@ -3721,7 +4230,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'reject_course_review') {
-          const adminNotes = this.ensureString(payload.adminNotes ?? 'คอร์สไม่ผ่านการอนุมัติ', 'adminNotes');
+          const adminNotes = this.ensureString(
+            payload.adminNotes ?? 'คอร์สไม่ผ่านการอนุมัติ',
+            'adminNotes',
+          );
           await this.prisma.pendingCourseReview.update({
             where: { id: reviewId },
             data: {
@@ -3766,7 +4278,9 @@ export class WorkspaceService {
 
         if (dto.action === 'toggle_promotion_active') {
           const id = this.ensureString(payload.id, 'id');
-          const current = await this.prisma.promotion.findUnique({ where: { id } });
+          const current = await this.prisma.promotion.findUnique({
+            where: { id },
+          });
           if (!current) {
             throw new NotFoundException('Promotion not found');
           }
@@ -3792,7 +4306,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'activate_theme') {
-          const id = this.ensureString(payload.id ?? payload.themeId, 'themeId');
+          const id = this.ensureString(
+            payload.id ?? payload.themeId,
+            'themeId',
+          );
           await this.prisma.seasonalTheme.updateMany({
             data: { active: false },
           });
@@ -3830,8 +4347,9 @@ export class WorkspaceService {
           await this.prisma.platformSetting.update({
             where: { id },
             data: {
-              value:
-                (setting.defaultValue ?? setting.value ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+              value: (setting.defaultValue ??
+                setting.value ??
+                Prisma.JsonNull) as Prisma.InputJsonValue,
               updatedById: adminId,
             },
           });
@@ -3908,7 +4426,9 @@ export class WorkspaceService {
             data: {
               status: AiDraftStatus.DRAFT,
               reviewNotes: this.localizedInput(
-                typeof payload.notes === 'string' ? payload.notes : 'ไม่อนุมัติ',
+                typeof payload.notes === 'string'
+                  ? payload.notes
+                  : 'ไม่อนุมัติ',
               ) as Prisma.InputJsonValue,
             },
           });
@@ -3955,8 +4475,8 @@ export class WorkspaceService {
               status: ReviewQueueStatus.PENDING,
               priority: PriorityLevel.MEDIUM,
               previewText: draft.title,
-              afterContent:
-                (draft.content ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+              afterContent: (draft.content ??
+                Prisma.JsonNull) as Prisma.InputJsonValue,
             },
           });
           return { message: 'ส่ง AI Draft เข้า Content Queue แล้ว' };
@@ -4078,7 +4598,9 @@ export class WorkspaceService {
               where: { userId: application.userId },
               update: {
                 displayName: application.displayName,
-                bio: this.localizedInput(application.shortBio) as Prisma.InputJsonValue,
+                bio: this.localizedInput(
+                  application.shortBio,
+                ) as Prisma.InputJsonValue,
                 specialties: application.expertise,
                 expertiseAreas: application.expertise,
                 payoutAccount: application.payoutAccount,
@@ -4089,8 +4611,12 @@ export class WorkspaceService {
               create: {
                 userId: application.userId,
                 displayName: application.displayName,
-                bio: this.localizedInput(application.shortBio) as Prisma.InputJsonValue,
-                headline: this.localizedInput('ผู้สอน Learney') as Prisma.InputJsonValue,
+                bio: this.localizedInput(
+                  application.shortBio,
+                ) as Prisma.InputJsonValue,
+                headline: this.localizedInput(
+                  'ผู้สอน Learney',
+                ) as Prisma.InputJsonValue,
                 specialties: application.expertise,
                 expertiseAreas: application.expertise,
                 payoutAccount: application.payoutAccount,
@@ -4116,7 +4642,9 @@ export class WorkspaceService {
                 reviewedById: adminId,
                 reviewedAt: new Date(),
                 adminNotes:
-                  typeof payload.adminNotes === 'string' ? payload.adminNotes : null,
+                  typeof payload.adminNotes === 'string'
+                    ? payload.adminNotes
+                    : null,
                 instructorProfileId: profile.id,
               },
             });
@@ -4136,7 +4664,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'request_instructor_application_changes') {
-          const adminNotes = this.ensureString(payload.adminNotes, 'adminNotes');
+          const adminNotes = this.ensureString(
+            payload.adminNotes,
+            'adminNotes',
+          );
           await this.prisma.instructorApplication.update({
             where: { id },
             data: {
@@ -4159,7 +4690,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'reject_instructor_application') {
-          const adminNotes = this.ensureString(payload.adminNotes ?? 'คำขอไม่ผ่านการอนุมัติ', 'adminNotes');
+          const adminNotes = this.ensureString(
+            payload.adminNotes ?? 'คำขอไม่ผ่านการอนุมัติ',
+            'adminNotes',
+          );
           await this.prisma.instructorApplication.update({
             where: { id },
             data: {
@@ -4214,7 +4748,10 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'submit_course_review') {
-          const courseId = this.ensureString(payload.id ?? payload.courseId, 'courseId');
+          const courseId = this.ensureString(
+            payload.id ?? payload.courseId,
+            'courseId',
+          );
           const course = await this.prisma.course.findUnique({
             where: { id: courseId },
           });
@@ -4222,15 +4759,16 @@ export class WorkspaceService {
             throw new NotFoundException('Course not found');
           }
 
-          const existingReview = await this.prisma.pendingCourseReview.findFirst({
-            where: {
-              courseId,
-              instructorId: userId,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-          });
+          const existingReview =
+            await this.prisma.pendingCourseReview.findFirst({
+              where: {
+                courseId,
+                instructorId: userId,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+            });
 
           const version = (existingReview?.version ?? 0) + 1;
 
@@ -4298,8 +4836,13 @@ export class WorkspaceService {
         }
 
         if (dto.action === 'delete_own_course') {
-          const courseId = this.ensureString(payload.id ?? payload.courseId, 'courseId');
-          const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+          const courseId = this.ensureString(
+            payload.id ?? payload.courseId,
+            'courseId',
+          );
+          const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+          });
           if (!course || course.instructorId !== userId) {
             throw new NotFoundException('Course not found');
           }
@@ -4320,7 +4863,10 @@ export class WorkspaceService {
           return { message: 'บันทึกแบบฝึกเรียบร้อยแล้ว' };
         }
 
-        if (dto.action === 'toggle_exercise_status' || dto.action === 'delete_exercise') {
+        if (
+          dto.action === 'toggle_exercise_status' ||
+          dto.action === 'delete_exercise'
+        ) {
           return this.applyAdminAction('skill-exercises', dto, userId);
         }
         break;
@@ -4375,10 +4921,8 @@ export class WorkspaceService {
             data: {
               fullname,
               email,
-              phone:
-                typeof payload.phone === 'string' ? payload.phone : null,
-              image:
-                typeof payload.image === 'string' ? payload.image : null,
+              phone: typeof payload.phone === 'string' ? payload.phone : null,
+              image: typeof payload.image === 'string' ? payload.image : null,
             },
           });
           return { message: 'บันทึกโปรไฟล์เรียบร้อยแล้ว' };
@@ -4489,16 +5033,23 @@ export class WorkspaceService {
 
     const feedback = exercise.questions.map((question) => {
       const answer = answers[question.id];
-      const answerKey = question.answerKey as
-        | { correct?: unknown; correctAnswers?: unknown[] }
-        | null;
+      const answerKey = question.answerKey as {
+        correct?: unknown;
+        correctAnswers?: unknown[];
+      } | null;
       const explanation = question.explanation ?? '';
       const isCorrect =
         question.type === SkillQuestionType.SHORT_ANSWER
-          ? String(answer ?? '').trim().toLowerCase() ===
-            String(answerKey?.correct ?? '').trim().toLowerCase()
+          ? String(answer ?? '')
+              .trim()
+              .toLowerCase() ===
+            String(answerKey?.correct ?? '')
+              .trim()
+              .toLowerCase()
           : JSON.stringify(answer ?? null) ===
-            JSON.stringify(answerKey?.correct ?? answerKey?.correctAnswers ?? null);
+            JSON.stringify(
+              answerKey?.correct ?? answerKey?.correctAnswers ?? null,
+            );
 
       maxScore += question.points;
 
