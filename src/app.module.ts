@@ -19,8 +19,8 @@ import { MailModule } from './mail/mail.module';
 import { StatsModule } from './stats/stats.module';
 import { ExperienceModule } from './experience/experience.module';
 import { WorkspaceModule } from './workspace/workspace.module';
-import { CommunityModule } from './community/community.module';
-import { AssessmentModule } from './assessment/assessment.module';
+import { AiModule } from './ai/ai.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -40,8 +40,8 @@ import { AssessmentModule } from './assessment/assessment.module';
     StatsModule,
     ExperienceModule,
     WorkspaceModule,
-    CommunityModule,
-    AssessmentModule,
+    AiModule,
+    ChatbotModule,
   ],
   controllers: [],
   providers: [PrismaService, BcryptService],

@@ -82,6 +82,32 @@ export class ExperienceService {
     return Number.isFinite(numeric) ? numeric : 0;
   }
 
+  private normalizeAgeGroup(ageGroup: string) {
+    const value = ageGroup.toLowerCase();
+
+    if (value.includes('primary')) return 'primary-school';
+    if (value.includes('secondary')) return 'secondary-school';
+    if (value.includes('university')) return 'university';
+    if (value.includes('working')) return 'working-age';
+
+    return this.slugify(ageGroup);
+  }
+
+  private getTopStrengths(
+    scores: Array<{ category: string; score: number }>,
+    limit = 3,
+  ) {
+    return [...scores]
+      .sort((left, right) => right.score - left.score)
+      .slice(0, limit)
+      .map((score) => score.category);
+  }
+
+  private getDiscoverySummary(summary: Prisma.JsonValue | null | undefined) {
+    const localized = this.parseLocalized(summary, '');
+    return localized.th ?? localized.en ?? '';
+  }
+
   private slugify(value: string) {
     return value
       .toLowerCase()
@@ -241,12 +267,20 @@ export class ExperienceService {
   }
 
   private async getActiveTheme() {
-    return this.prisma.seasonalTheme.findFirst({
-      where: {
-        OR: [{ active: true }, { previewMode: true }],
-      },
-      orderBy: [{ active: 'desc' }, { updatedAt: 'desc' }],
-    });
+    try {
+      return await this.prisma.seasonalTheme.findFirst({
+        where: {
+          OR: [{ active: true }, { previewMode: true }],
+        },
+        orderBy: [{ active: 'desc' }, { updatedAt: 'desc' }],
+      });
+    } catch (error) {
+      console.warn(
+        'Unable to load seasonal theme, using neutral theme.',
+        error,
+      );
+      return null;
+    }
   }
 
   async getBootstrap() {
@@ -1496,31 +1530,8 @@ export class ExperienceService {
       ),
     );
 
-    const courses = await this.prisma.course.findMany({
-      where: {
-        id: { in: [...recommendedCourseIds] },
-      },
-      include: {
-        categoryRecord: true,
-        displayInstructor: true,
-        instructor: {
-          select: {
-            id: true,
-            fullname: true,
-            image: true,
-          },
-        },
-        promotions: {
-          include: {
-            promotion: true,
-          },
-        },
-      },
-    });
-
-    return courses.map((course, index) => ({
-      ...this.courseToCard(course),
-      matchPercentage: Math.max(
+    const scoreForIndex = (index: number) =>
+      Math.max(
         70,
         96 -
           index * 4 +
@@ -1528,65 +1539,210 @@ export class ExperienceService {
             (attempt.scores[index % Math.max(attempt.scores.length, 1)]
               ?.score ?? 80) / 20,
           ),
-      ),
-    }));
-  }
+      );
 
-  async getDashboard(userId: string) {
-    const [
-      user,
-      wishlist,
-      enrolledCourses,
-      attempts,
-      communityCount,
-      careerSessions,
-    ] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
+    try {
+      const courses = await this.prisma.course.findMany({
+        where: {
+          id: { in: [...recommendedCourseIds] },
+        },
         select: {
           id: true,
-          fullname: true,
-          role: true,
-          image: true,
-        },
-      }),
-      this.prisma.wishlist.findUnique({
-        where: { userId },
-        include: { items: true },
-      }),
-      this.prisma.enrolledCourse.findMany({
-        where: { userId },
-        include: {
-          course: {
-            include: {
-              categoryRecord: true,
-              displayInstructor: true,
-              instructor: {
+          slug: true,
+          courseName: true,
+          title: true,
+          shortDescription: true,
+          localizedDescription: true,
+          description: true,
+          category: true,
+          level: true,
+          badge: true,
+          thumbnail: true,
+          coverImage: true,
+          previewThumbnail: true,
+          price: true,
+          discountPrice: true,
+          averageRating: true,
+          reviewCount: true,
+          learnerCount: true,
+          isPopular: true,
+          isFeatured: true,
+          workflowStatus: true,
+          sourceType: true,
+          categoryRecord: {
+            select: {
+              key: true,
+              slug: true,
+              name: true,
+              color: true,
+            },
+          },
+          displayInstructor: {
+            select: {
+              id: true,
+              displayName: true,
+              image: true,
+              bio: true,
+              headline: true,
+              visible: true,
+            },
+          },
+          instructor: {
+            select: {
+              id: true,
+              fullname: true,
+              image: true,
+            },
+          },
+          promotions: {
+            select: {
+              promotion: {
                 select: {
-                  id: true,
-                  fullname: true,
-                  image: true,
+                  active: true,
+                  title: true,
+                  type: true,
+                  discount: true,
+                  promoCode: true,
                 },
-              },
-              promotions: {
-                include: { promotion: true },
               },
             },
           },
         },
-      }),
-      this.prisma.skillTestAttempt.findMany({
-        where: { userId },
-        include: { scores: true },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.communityThread.count({ where: { userId } }),
-      this.prisma.assessmentSession.findMany({
-        where: { userId, status: 'COMPLETED' },
-        include: { result: true, stage: true },
-        orderBy: { completedAt: 'desc' },
-      }),
-    ]);
+      });
+
+      return courses.map((course, index) => ({
+        ...this.courseToCard(course),
+        matchPercentage: scoreForIndex(index),
+      }));
+    } catch (error) {
+      console.warn(
+        'Unable to load mapped recommended courses, using curated fallback courses instead.',
+        error,
+      );
+
+      const fallbackCourses = await this.prisma.course.findMany({
+        where: publicCourseVisibility,
+        orderBy: [
+          { isFeatured: 'desc' },
+          { isPopular: 'desc' },
+          { updatedAt: 'desc' },
+        ],
+        take: 3,
+        select: {
+          id: true,
+          slug: true,
+          courseName: true,
+          title: true,
+          shortDescription: true,
+          localizedDescription: true,
+          description: true,
+          category: true,
+          level: true,
+          badge: true,
+          thumbnail: true,
+          coverImage: true,
+          previewThumbnail: true,
+          price: true,
+          discountPrice: true,
+          averageRating: true,
+          reviewCount: true,
+          learnerCount: true,
+          isPopular: true,
+          isFeatured: true,
+          workflowStatus: true,
+          sourceType: true,
+          categoryRecord: {
+            select: {
+              key: true,
+              slug: true,
+              name: true,
+              color: true,
+            },
+          },
+          displayInstructor: {
+            select: {
+              id: true,
+              displayName: true,
+              image: true,
+              bio: true,
+              headline: true,
+              visible: true,
+            },
+          },
+          instructor: {
+            select: {
+              id: true,
+              fullname: true,
+              image: true,
+            },
+          },
+          promotions: {
+            select: {
+              promotion: {
+                select: {
+                  active: true,
+                  title: true,
+                  type: true,
+                  discount: true,
+                  promoCode: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return fallbackCourses.map((course, index) => ({
+        ...this.courseToCard(course),
+        matchPercentage: scoreForIndex(index),
+      }));
+    }
+  }
+
+  async getDashboard(userId: string) {
+    const [user, wishlist, enrolledCourses, attempts, communityCount] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            fullname: true,
+            role: true,
+            image: true,
+          },
+        }),
+        this.prisma.wishlist.findUnique({
+          where: { userId },
+          include: { items: true },
+        }),
+        this.prisma.enrolledCourse.findMany({
+          where: { userId },
+          include: {
+            course: {
+              include: {
+                categoryRecord: true,
+                displayInstructor: true,
+                instructor: {
+                  select: {
+                    id: true,
+                    fullname: true,
+                    image: true,
+                  },
+                },
+                promotions: {
+                  include: { promotion: true },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.skillTestAttempt.findMany({
+          where: { userId },
+          include: { scores: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.communityThread.count({ where: { userId } }),
+      ]);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -1601,6 +1757,13 @@ export class ExperienceService {
     const postAttempt = attempts.find(
       (attempt) => attempt.assessmentKind === AssessmentKind.POST_TEST,
     );
+    const careerHistory = discoveryAttempts.map((attempt) => ({
+      id: attempt.id,
+      sessionId: attempt.id,
+      date: attempt.createdAt.toISOString(),
+      summary: this.getDiscoverySummary(attempt.summary),
+      strengths: this.getTopStrengths(attempt.scores, 3),
+    }));
 
     const progressChart = skillCategories.map((category) => ({
       category,
@@ -1696,16 +1859,7 @@ export class ExperienceService {
             summary: this.parseLocalized(discoveryAttempts[0].summary, ''),
           }
         : null,
-      careerHistory: careerSessions
-        .filter((s) => s.result)
-        .map((s) => ({
-          id: s.result!.id,
-          sessionId: s.id,
-          date: s.completedAt?.toISOString() || s.startedAt.toISOString(),
-          summary: s.result!.aiSummary,
-          strengths:
-            (s.result!.topTraitsJson as any[])?.map((t) => t.traitCode) || [],
-        })),
+      careerHistory,
     };
   }
 
@@ -1870,6 +2024,7 @@ export class ExperienceService {
       aiQueueCount,
       quickActions: [
         { label: 'Add Course', href: '/admin/ai-course-builder' },
+        { label: 'Career Assessments', href: '/admin/assessments' },
         { label: 'Publish Promotion', href: '/admin/promotions' },
         {
           label: 'Change Homepage Popular Courses',
@@ -1882,40 +2037,53 @@ export class ExperienceService {
   }
 
   async getAdminCareerHistory() {
-    const allSessions = await this.prisma.assessmentSession.count();
-    const sessions = await this.prisma.assessmentSession.findMany({
+    const attempts = await this.prisma.skillTestAttempt.findMany({
       where: {
-        status: 'COMPLETED',
-        result: { isNot: null },
+        assessmentKind: AssessmentKind.DISCOVERY,
       },
       include: {
         user: { select: { fullname: true, email: true } },
-        stage: true,
-        result: true,
+        scores: true,
       },
-      orderBy: { completedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
-    const total = sessions.length;
+    const careerIds = [
+      ...new Set(attempts.flatMap((attempt) => attempt.topCareerIds)),
+    ];
+    const careers = careerIds.length
+      ? await this.prisma.career.findMany({
+          where: { id: { in: careerIds } },
+          select: { id: true, name: true, slug: true },
+        })
+      : [];
+    const careerMap = new Map(
+      careers.map((career) => [
+        career.id,
+        this.parseLocalized(career.name, career.slug).th ?? career.slug,
+      ]),
+    );
+
+    const completedAttempts = attempts.filter(
+      (attempt) => attempt.scores.length > 0,
+    );
+    const total = completedAttempts.length;
     const completionRate =
-      allSessions > 0 ? Math.round((total / allSessions) * 100) : 0;
+      attempts.length > 0 ? Math.round((total / attempts.length) * 100) : 0;
 
     const stageCounts = new Map<string, number>();
     const careerCounts = new Map<string, number>();
 
-    sessions.forEach((s) => {
-      const stageTitle = s.stage?.titleTh || 'ไม่ระบุช่วงวัย';
+    completedAttempts.forEach((attempt) => {
+      const stageTitle = attempt.ageGroup || 'ไม่ระบุช่วงวัย';
       stageCounts.set(stageTitle, (stageCounts.get(stageTitle) || 0) + 1);
 
-      const result = s.result;
-      if (result && result.careerMatchesJson) {
-        const matches = (result.careerMatchesJson as any).careers || [];
-        matches.forEach((c: any) => {
-          if (c.title) {
-            careerCounts.set(c.title, (careerCounts.get(c.title) || 0) + 1);
-          }
-        });
-      }
+      attempt.topCareerIds.forEach((careerId) => {
+        const careerName = careerMap.get(careerId);
+        if (careerName) {
+          careerCounts.set(careerName, (careerCounts.get(careerName) || 0) + 1);
+        }
+      });
     });
 
     let popularStage = '-';
@@ -1936,24 +2104,18 @@ export class ExperienceService {
       }
     });
 
-    const items = sessions.map((session) => {
-      const result = session.result!;
-      const topTraits =
-        (result.topTraitsJson as any[])?.map((t) => t.traitCode) || [];
-      const careers =
-        (result.careerMatchesJson as any)?.careers?.map((c: any) => c.title) ||
-        [];
-
+    const items = completedAttempts.map((attempt) => {
       return {
-        id: result.id,
-        user: session.user
-          ? { fullname: session.user.fullname, email: session.user.email }
+        id: attempt.id,
+        user: attempt.user
+          ? { fullname: attempt.user.fullname, email: attempt.user.email }
           : null,
-        stageSlug: session.stage?.slug || 'unknown',
-        topStrengths: topTraits,
-        recommendedJobs: careers,
-        createdAt:
-          session.completedAt?.toISOString() || session.startedAt.toISOString(),
+        stageSlug: this.normalizeAgeGroup(attempt.ageGroup),
+        topStrengths: this.getTopStrengths(attempt.scores, 4),
+        recommendedJobs: attempt.topCareerIds
+          .map((careerId) => careerMap.get(careerId))
+          .filter((career): career is string => Boolean(career)),
+        createdAt: attempt.createdAt.toISOString(),
       };
     });
 
@@ -1961,19 +2123,17 @@ export class ExperienceService {
   }
 
   async deleteAdminCareerHistoryRecord(resultId: string) {
-    // ค้นหา session ID จาก result ID
-    const result = await this.prisma.assessmentResult.findUnique({
+    const attempt = await this.prisma.skillTestAttempt.findUnique({
       where: { id: resultId },
-      select: { sessionId: true },
+      select: { id: true },
     });
 
-    if (!result) {
+    if (!attempt) {
       throw new NotFoundException('ไม่พบผลประเมินที่ต้องการลบ');
     }
 
-    // ลบ session ซึ่งจะ cascade ไปลบ result และ answers ด้วย
-    await this.prisma.assessmentSession.delete({
-      where: { id: result.sessionId },
+    await this.prisma.skillTestAttempt.delete({
+      where: { id: attempt.id },
     });
 
     return { message: 'ลบประวัติผลประเมินสำเร็จ', id: resultId };
