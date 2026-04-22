@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { HomeShowcaseModule } from './home-showcase/home-showcase.module';
+
 import { PrismaService } from './database/prisma.service';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './users/users.module';
@@ -26,6 +28,8 @@ import { PromotionModule } from './promotion/promotion.module';
 
 @Module({
   imports: [
+    HomeShowcaseModule,
+
     UsersModule,
     DatabaseModule,
     AuthModule,

@@ -1713,3 +1713,30 @@ model AssessmentResult {
 
   createdAt DateTime @default(now()) @db.Timestamptz()
 }
+
+model HomeShowcase {
+  id                String   @id @default(cuid())
+  title             String
+  subtitle          String?
+  badge             String?
+  description       String?
+  desktopImageUrl   String
+  mobileImageUrl    String?
+  primaryText       String?
+  primaryHref       String?
+  secondaryText     String?
+  secondaryHref     String?
+  overlayOpacity    Float    @default(0.18)
+  textAlign         String   @default("left")
+  mediaPosition     String   @default("right")
+  enableAnimation   Boolean  @default(true)
+  enableFloating    Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  isActive          Boolean  @default(true)
+  startsAt          DateTime? @db.Timestamptz()
+  endsAt            DateTime? @db.Timestamptz()
+  createdAt         DateTime  @default(now()) @db.Timestamptz()
+  updatedAt         DateTime  @updatedAt @db.Timestamptz()
+
+  @@index([isActive, startsAt, endsAt, sortOrder])
+}

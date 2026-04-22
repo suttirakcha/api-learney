@@ -742,12 +742,12 @@ export class ExperienceService {
       return {
         hero: {
           title: this.parseLocalized(
-            'เติบโตทักษะ AI ให้พร้อมสำหรับยุคดิจิทัล',
-            'Grow your AI skills for the digital era',
+            'พัฒนาทักษะของคุณเพื่อเติบโตอย่างมั่นใจในยุค AI',
+            'Develop your skills and grow confidently in the age of AI',
           ),
           subtitle: this.parseLocalized(
-            'คอร์สที่อบอุ่น ใช้งานได้จริง และออกแบบมาให้คุณก้าวไปข้างหน้าอย่างมั่นใจ',
-            'Warm, practical courses designed to help you move forward with confidence.',
+            'เรียนรู้สิ่งใหม่จากคอร์สคุณภาพที่เข้าใจง่าย ใช้ได้จริงพร้อม AI ที่ช่วยแนะนำ ดูแล และทำให้คุณเห็นว่าตัวเองเก่งขึ้นได้ทุกวัน',
+            'Learn new skills through high-quality courses that are easy to understand and practical to use, with AI that guides, supports, and helps you see yourself improve every day.',
           ),
           ctas: [
             {
@@ -855,12 +855,12 @@ export class ExperienceService {
       return {
         hero: {
           title: this.parseLocalized(
-            'เติบโตทักษะ AI ให้พร้อมสำหรับยุคดิจิทัล',
-            'Grow your AI skills for the digital era',
+            'พัฒนาทักษะของคุณเพื่อเติบโตอย่างมั่นใจในยุค AI',
+            'Develop your skills and grow confidently in the age of AI',
           ),
           subtitle: this.parseLocalized(
-            'คอร์สที่อบอุ่น ใช้งานได้จริง และออกแบบมาให้คุณก้าวไปข้างหน้าอย่างมั่นใจ',
-            'Warm, practical courses designed to help you move forward with confidence.',
+            'เรียนรู้สิ่งใหม่จากคอร์สคุณภาพที่เข้าใจง่าย ใช้ได้จริงพร้อม AI ที่ช่วยแนะนำ ดูแล และทำให้คุณเห็นว่าตัวเองเก่งขึ้นได้ทุกวัน',
+            'Learn new skills through high-quality courses that are easy to understand and practical to use, with AI that guides, supports, and helps you see yourself improve every day.',
           ),
           ctas: [
             {
