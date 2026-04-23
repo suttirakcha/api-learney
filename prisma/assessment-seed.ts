@@ -1,5 +1,6 @@
-import { PrismaClient } from '../src/database/generated/prisma/client';
-const prisma = new PrismaClient();
+import { createSeedPrisma } from './seed-helpers';
+
+const prisma = createSeedPrisma();
 
 async function main() {
   const stages = [
@@ -52,11 +53,11 @@ async function main() {
 
     // Sample Question for Primary
     if (s.slug === 'primary-school') {
-      const qCount = await prisma.assessmentQuestion.count({
+      const qCount = await prisma.careerDiscoveryQuestion.count({
         where: { stageId: stage.id },
       });
       if (qCount === 0) {
-        await prisma.assessmentQuestion.create({
+        await prisma.careerDiscoveryQuestion.create({
           data: {
             stageId: stage.id,
             questionText: 'ฉันชอบลองทำสิ่งใหม่ ๆ แม้จะยังไม่เคยทำมาก่อน',

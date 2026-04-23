@@ -258,6 +258,7 @@ export class UsersService {
     ]);
 
     const purchaseDateByCourseId = new Map<string, string>();
+    let successfulPaymentCount = 0;
 
     successfulPayments.forEach((payment) => {
       const evidence = parsePaymentEvidence(payment.evidence);
@@ -265,6 +266,10 @@ export class UsersService {
       const fallbackCourseIds = payment.cart.cartItems.map(
         (item) => item.courseId,
       );
+      const transactionCount =
+        evidence.transactions.length || (Number(payment.amount) > 0 ? 1 : 0);
+
+      successfulPaymentCount += transactionCount;
 
       evidence.transactions.forEach((transaction) => {
         transaction.courseIds.forEach((courseId) => {
@@ -338,7 +343,7 @@ export class UsersService {
     return {
       stats: {
         enrolledCourses: courses.length,
-        successfulPayments: successfulPayments.length,
+        successfulPayments: successfulPaymentCount,
         totalSpent: Number(totalSpent.toFixed(2)),
       },
       courses,

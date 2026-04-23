@@ -15,6 +15,7 @@ import {
   SeasonalThemeKey,
   Status,
 } from '../src/database/generated/prisma/client';
+import { buildCourseImageSet } from './course-image-map';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
@@ -25,13 +26,31 @@ const prisma = new PrismaClient({
 const localized = (th: string, en: string) => ({ th, en });
 
 const categorySeed = [
-  ['ai-digital-skills', 'AI & Digital Skills', 'AI และทักษะดิจิทัล', 'Sparkles', '#f8a4b7'],
+  [
+    'ai-digital-skills',
+    'AI & Digital Skills',
+    'AI และทักษะดิจิทัล',
+    'Sparkles',
+    '#f8a4b7',
+  ],
   ['marketing', 'Marketing', 'การตลาด', 'Megaphone', '#f4c26b'],
   ['business', 'Business', 'ธุรกิจ', 'BriefcaseBusiness', '#c7b4f9'],
   ['design', 'Design', 'ดีไซน์', 'Palette', '#f6aac8'],
   ['programming', 'Programming', 'Programming', 'Code2', '#8fd7ff'],
-  ['content-creator', 'Content Creator', 'คอนเทนต์ครีเอเตอร์', 'Clapperboard', '#ffd68a'],
-  ['personal-development', 'Personal Development', 'พัฒนาตนเอง', 'HeartHandshake', '#ffb4d2'],
+  [
+    'content-creator',
+    'Content Creator',
+    'คอนเทนต์ครีเอเตอร์',
+    'Clapperboard',
+    '#ffd68a',
+  ],
+  [
+    'personal-development',
+    'Personal Development',
+    'พัฒนาตนเอง',
+    'HeartHandshake',
+    '#ffb4d2',
+  ],
   ['language', 'Language', 'ภาษา', 'Languages', '#bda9ff'],
   ['career-skills', 'Career Skills', 'ทักษะอาชีพ', 'TrendingUp', '#f8c97b'],
 ] as const;
@@ -55,6 +74,10 @@ function inferCategoryKey(category: string) {
   if (lower.includes('personal')) return 'personal-development';
   if (lower.includes('program') || lower.includes('dev')) return 'programming';
   return 'ai-digital-skills';
+}
+
+function needsCourseImageRefresh(value: string | null | undefined) {
+  return !value || value.includes('placehold.co');
 }
 
 async function ensureBaseUsersAndCourses() {
@@ -109,13 +132,39 @@ async function ensureBaseUsersAndCourses() {
   const existingCourses = await prisma.course.count();
 
   if (existingCourses === 0) {
+    const aiForWorkImages = buildCourseImageSet({
+      courseName: 'AI for Work Foundations',
+      category: 'AI & Digital Skills',
+      tags: ['ai', 'workflow', 'productivity'],
+      description: 'Build practical AI workflows for modern digital work.',
+      language: LocaleCode.TH,
+    });
+    const marketingWithAiImages = buildCourseImageSet({
+      courseName: 'Marketing with AI Systems',
+      category: 'Marketing',
+      tags: ['marketing', 'campaigns', 'analytics'],
+      description:
+        'Use AI to plan campaigns, analyze content, and improve output quality.',
+      language: LocaleCode.TH,
+    });
+    const creatorToolkitImages = buildCourseImageSet({
+      courseName: 'Creator Toolkit for the AI Era',
+      category: 'Content Creator',
+      tags: ['creator', 'content', 'ai'],
+      description:
+        'Create better content systems with AI-assisted planning and production.',
+      language: LocaleCode.TH,
+    });
+
     const sampleCourses = await Promise.all([
       prisma.course.create({
         data: {
           courseName: 'AI for Work Foundations',
           description: 'Build practical AI workflows for modern digital work.',
           category: 'AI & Digital Skills',
-          thumbnail: 'https://placehold.co/1200x800/f7dfe5/4a3245?text=AI+FOR+WORK',
+          thumbnail: aiForWorkImages.thumbnail,
+          coverImage: aiForWorkImages.coverImage,
+          previewThumbnail: aiForWorkImages.previewThumbnail,
           price: 2490,
           discount: 490,
           tags: ['ai', 'workflow', 'productivity'],
@@ -126,9 +175,12 @@ async function ensureBaseUsersAndCourses() {
       prisma.course.create({
         data: {
           courseName: 'Marketing with AI Systems',
-          description: 'Use AI to plan campaigns, analyze content, and improve output quality.',
+          description:
+            'Use AI to plan campaigns, analyze content, and improve output quality.',
           category: 'Marketing',
-          thumbnail: 'https://placehold.co/1200x800/f9e8b7/4a3245?text=AI+MARKETING',
+          thumbnail: marketingWithAiImages.thumbnail,
+          coverImage: marketingWithAiImages.coverImage,
+          previewThumbnail: marketingWithAiImages.previewThumbnail,
           price: 2890,
           discount: 590,
           tags: ['marketing', 'campaigns', 'analytics'],
@@ -139,9 +191,12 @@ async function ensureBaseUsersAndCourses() {
       prisma.course.create({
         data: {
           courseName: 'Creator Toolkit for the AI Era',
-          description: 'Create better content systems with AI-assisted planning and production.',
+          description:
+            'Create better content systems with AI-assisted planning and production.',
           category: 'Content Creator',
-          thumbnail: 'https://placehold.co/1200x800/ddd2fb/4a3245?text=AI+CREATOR',
+          thumbnail: creatorToolkitImages.thumbnail,
+          coverImage: creatorToolkitImages.coverImage,
+          previewThumbnail: creatorToolkitImages.previewThumbnail,
           price: 2190,
           discount: 390,
           tags: ['creator', 'content', 'ai'],
@@ -191,7 +246,10 @@ async function main() {
 
   const categories = new Map<string, string>();
 
-  for (const [index, [key, legacyName, thaiName, icon, color]] of categorySeed.entries()) {
+  for (const [
+    index,
+    [key, legacyName, thaiName, icon, color],
+  ] of categorySeed.entries()) {
     const category = await prisma.category.upsert({
       where: { key },
       update: {
@@ -267,6 +325,25 @@ async function main() {
 
   for (const [index, course] of courses.entries()) {
     const categoryKey = inferCategoryKey(course.category);
+    const mappedImages = buildCourseImageSet({
+      slug: course.slug,
+      id: course.id,
+      title: course.title as { th: string; en: string } | null,
+      courseName: course.courseName,
+      categoryKey,
+      category: course.category,
+      shortDescription: course.shortDescription as {
+        th: string;
+        en: string;
+      } | null,
+      description: course.localizedDescription as {
+        th: string;
+        en: string;
+      } | null,
+      tags: course.tags,
+      level: course.level,
+      language: course.language ?? LocaleCode.TH,
+    });
     const reviewAverage =
       course.reviews.length > 0
         ? course.reviews.reduce((sum, review) => sum + review.rating, 0) /
@@ -276,7 +353,9 @@ async function main() {
     await prisma.course.update({
       where: { id: course.id },
       data: {
-        slug: course.slug ?? `${slugify(course.courseName)}-${course.id.slice(0, 6)}`,
+        slug:
+          course.slug ??
+          `${slugify(course.courseName)}-${course.id.slice(0, 6)}`,
         title: course.title ?? localized(course.courseName, course.courseName),
         shortDescription:
           course.shortDescription ??
@@ -288,13 +367,28 @@ async function main() {
           course.localizedDescription ??
           localized(course.description, course.description),
         categoryId: course.categoryId ?? categories.get(categoryKey) ?? null,
-        coverImage: course.coverImage ?? course.thumbnail,
+        thumbnail: needsCourseImageRefresh(course.thumbnail)
+          ? mappedImages.thumbnail
+          : course.thumbnail,
+        coverImage: needsCourseImageRefresh(course.coverImage)
+          ? mappedImages.coverImage
+          : course.coverImage,
         previewVideoUrl: course.previewVideoUrl ?? course.videoPreview,
-        previewThumbnail: course.previewThumbnail ?? course.thumbnail,
+        previewThumbnail: needsCourseImageRefresh(course.previewThumbnail)
+          ? mappedImages.previewThumbnail
+          : course.previewThumbnail,
         discountPrice:
           course.discountPrice ??
-          (course.discount ? Number(course.price) - Number(course.discount) : null),
-        level: course.level ?? (index % 3 === 0 ? 'Beginner' : index % 3 === 1 ? 'Intermediate' : 'Advanced'),
+          (course.discount
+            ? Number(course.price) - Number(course.discount)
+            : null),
+        level:
+          course.level ??
+          (index % 3 === 0
+            ? 'Beginner'
+            : index % 3 === 1
+              ? 'Intermediate'
+              : 'Advanced'),
         badge:
           course.badge ??
           (index < 2 ? 'Best Seller' : index < 5 ? 'Popular' : 'Recommended'),
@@ -316,7 +410,9 @@ async function main() {
         duration: course.duration ?? `${4 + (index % 5)}h ${15 + index * 3}m`,
         language: course.language ?? LocaleCode.TH,
         displayInstructorId:
-          course.displayInstructorId ?? profileByUserId.get(course.instructorId) ?? null,
+          course.displayInstructorId ??
+          profileByUserId.get(course.instructorId) ??
+          null,
       },
     });
 
@@ -331,8 +427,12 @@ async function main() {
             courseId: course.id,
             kind,
             title: localized(
-              kind === AssessmentKind.PRE_TEST ? 'Pre-test ก่อนเรียน' : 'Post-test หลังเรียน',
-              kind === AssessmentKind.PRE_TEST ? 'Pre-test before learning' : 'Post-test after learning',
+              kind === AssessmentKind.PRE_TEST
+                ? 'Pre-test ก่อนเรียน'
+                : 'Post-test หลังเรียน',
+              kind === AssessmentKind.PRE_TEST
+                ? 'Pre-test before learning'
+                : 'Post-test after learning',
             ),
             description: localized(
               'แบบประเมินเพื่อช่วยให้เห็นพัฒนาการของผู้เรียน',
@@ -342,19 +442,27 @@ async function main() {
         });
 
         await prisma.assessmentQuestion.createMany({
-          data: ['Creativity', 'Leadership', 'Helping Others', 'Analysis', 'Communication', 'Teamwork'].map(
-            (category, order) => ({
-              courseAssessmentId: assessment.id,
-              prompt: localized(
-                `ฉันมั่นใจในการใช้ ${category} กับบริบทของคอร์สนี้`,
-                `I feel confident using ${category} in this course context.`,
-              ),
-              category,
-              options: [1, 2, 3, 4, 5],
-              explanation: localized('เลือกคะแนนที่ใกล้เคียงตัวคุณที่สุด', 'Choose the score that fits you best.'),
-              order: order + 1,
-            }),
-          ),
+          data: [
+            'Creativity',
+            'Leadership',
+            'Helping Others',
+            'Analysis',
+            'Communication',
+            'Teamwork',
+          ].map((category, order) => ({
+            courseAssessmentId: assessment.id,
+            prompt: localized(
+              `ฉันมั่นใจในการใช้ ${category} กับบริบทของคอร์สนี้`,
+              `I feel confident using ${category} in this course context.`,
+            ),
+            category,
+            options: [1, 2, 3, 4, 5],
+            explanation: localized(
+              'เลือกคะแนนที่ใกล้เคียงตัวคุณที่สุด',
+              'Choose the score that fits you best.',
+            ),
+            order: order + 1,
+          })),
         });
       }
     }
@@ -365,12 +473,14 @@ async function main() {
       where: { courseId: course.id },
       update: {
         rank: index + 1,
-        badge: index === 0 ? 'Best Seller' : index === 1 ? 'Popular' : 'Trending',
+        badge:
+          index === 0 ? 'Best Seller' : index === 1 ? 'Popular' : 'Trending',
       },
       create: {
         courseId: course.id,
         rank: index + 1,
-        badge: index === 0 ? 'Best Seller' : index === 1 ? 'Popular' : 'Trending',
+        badge:
+          index === 0 ? 'Best Seller' : index === 1 ? 'Popular' : 'Trending',
       },
     });
   }
@@ -378,8 +488,18 @@ async function main() {
   for (const theme of [
     [SeasonalThemeKey.SONGKRAN, localized('สงกรานต์', 'Songkran'), true, false],
     [SeasonalThemeKey.NEW_YEAR, localized('ปีใหม่', 'New Year'), false, false],
-    [SeasonalThemeKey.VALENTINE, localized('วาเลนไทน์', 'Valentine'), false, true],
-    [SeasonalThemeKey.HALLOWEEN, localized('ฮาโลวีน', 'Halloween'), false, false],
+    [
+      SeasonalThemeKey.VALENTINE,
+      localized('วาเลนไทน์', 'Valentine'),
+      false,
+      true,
+    ],
+    [
+      SeasonalThemeKey.HALLOWEEN,
+      localized('ฮาโลวีน', 'Halloween'),
+      false,
+      false,
+    ],
   ] as const) {
     await prisma.seasonalTheme.upsert({
       where: { key: theme[0] },
@@ -407,7 +527,10 @@ async function main() {
   const flashSale = await prisma.promotion.upsert({
     where: { slug: 'flash-sale-ai-sprint' },
     update: {
-      title: localized('Flash Sale: AI Sprint Week', 'Flash Sale: AI Sprint Week'),
+      title: localized(
+        'Flash Sale: AI Sprint Week',
+        'Flash Sale: AI Sprint Week',
+      ),
       description: localized(
         'โปรโมชันสำหรับคอร์สยอดนิยมที่ช่วยให้คุณอัปสกิลได้เร็วขึ้น',
         'A campaign for popular courses that help learners upskill quickly.',
@@ -422,7 +545,10 @@ async function main() {
     },
     create: {
       slug: 'flash-sale-ai-sprint',
-      title: localized('Flash Sale: AI Sprint Week', 'Flash Sale: AI Sprint Week'),
+      title: localized(
+        'Flash Sale: AI Sprint Week',
+        'Flash Sale: AI Sprint Week',
+      ),
       description: localized(
         'โปรโมชันสำหรับคอร์สยอดนิยมที่ช่วยให้คุณอัปสกิลได้เร็วขึ้น',
         'A campaign for popular courses that help learners upskill quickly.',
@@ -465,7 +591,10 @@ async function main() {
     const test = await prisma.skillTest.upsert({
       where: { slug: slugify(ageGroup) },
       update: {
-        title: localized('คุณอาจเก่งมากกว่าที่คิด', 'You might be more capable than you think'),
+        title: localized(
+          'คุณอาจเก่งมากกว่าที่คิด',
+          'You might be more capable than you think',
+        ),
         intro: localized(
           'ค้นหาจุดแข็งและเส้นทางอาชีพที่เหมาะกับตัวคุณ',
           'Discover strengths and career directions that fit you.',
@@ -474,7 +603,10 @@ async function main() {
       create: {
         slug: slugify(ageGroup),
         ageGroup,
-        title: localized('คุณอาจเก่งมากกว่าที่คิด', 'You might be more capable than you think'),
+        title: localized(
+          'คุณอาจเก่งมากกว่าที่คิด',
+          'You might be more capable than you think',
+        ),
         intro: localized(
           'ค้นหาจุดแข็งและเส้นทางอาชีพที่เหมาะกับตัวคุณ',
           'Discover strengths and career directions that fit you.',
@@ -488,18 +620,23 @@ async function main() {
       })) === 0
     ) {
       await prisma.skillTestQuestion.createMany({
-        data: ['Creativity', 'Leadership', 'Helping Others', 'Analysis', 'Communication', 'Teamwork'].map(
-          (category, order) => ({
-            skillTestId: test.id,
-            prompt: localized(
-              `ฉันสนุกเมื่อได้ใช้ ${category} เพื่อทำให้สิ่งต่างๆ ดีขึ้น`,
-              `I feel energized when I use ${category} to improve something.`,
-            ),
-            category,
-            order: order + 1,
-            weight: 1,
-          }),
-        ),
+        data: [
+          'Creativity',
+          'Leadership',
+          'Helping Others',
+          'Analysis',
+          'Communication',
+          'Teamwork',
+        ].map((category, order) => ({
+          skillTestId: test.id,
+          prompt: localized(
+            `ฉันสนุกเมื่อได้ใช้ ${category} เพื่อทำให้สิ่งต่างๆ ดีขึ้น`,
+            `I feel energized when I use ${category} to improve something.`,
+          ),
+          category,
+          order: order + 1,
+          weight: 1,
+        })),
       });
     }
   }
@@ -511,9 +648,24 @@ async function main() {
   });
 
   const careers = [
-    ['marketing-strategist', 'Marketing Strategist', 'นักกลยุทธ์การตลาด', ['Communication', 'Analysis', 'Creativity']],
-    ['ux-ui-designer', 'UX/UI Designer', 'UX/UI Designer', ['Creativity', 'Analysis', 'Communication']],
-    ['programmer', 'Programmer', 'โปรแกรมเมอร์', ['Analysis', 'Teamwork', 'Communication']],
+    [
+      'marketing-strategist',
+      'Marketing Strategist',
+      'นักกลยุทธ์การตลาด',
+      ['Communication', 'Analysis', 'Creativity'],
+    ],
+    [
+      'ux-ui-designer',
+      'UX/UI Designer',
+      'UX/UI Designer',
+      ['Creativity', 'Analysis', 'Communication'],
+    ],
+    [
+      'programmer',
+      'Programmer',
+      'โปรแกรมเมอร์',
+      ['Analysis', 'Teamwork', 'Communication'],
+    ],
   ] as const;
 
   for (const [slug, enName, thName, requiredSkills] of careers) {
@@ -594,7 +746,11 @@ async function main() {
           draftType: 'course-blueprint',
           title: draftCourse.courseName,
           content: {
-            learningOutcomes: ['Clear outcomes', 'Structured lessons', 'Review workflow'],
+            learningOutcomes: [
+              'Clear outcomes',
+              'Structured lessons',
+              'Review workflow',
+            ],
             finalProject: 'Create a practical implementation plan',
           },
           status: AiDraftStatus.ADMIN_REVIEW,
@@ -603,7 +759,9 @@ async function main() {
     }
   }
 
-  const firstStudent = await prisma.user.findFirst({ where: { role: Role.USER } });
+  const firstStudent = await prisma.user.findFirst({
+    where: { role: Role.USER },
+  });
   if (
     firstStudent &&
     (await prisma.communityThread.count()) === 0 &&

@@ -4,7 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'src/database/generated/prisma/internal/prismaNamespace';
-import { PromotionType } from 'src/database/generated/prisma/client';
+import {
+  CourseWorkflowStatus,
+  PromotionType,
+  Status,
+} from 'src/database/generated/prisma/client';
 import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
@@ -16,6 +20,35 @@ export class CartService {
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
+  private async getPurchasableCourse(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: {
+        id: true,
+        courseName: true,
+        status: true,
+        workflowStatus: true,
+        isPublished: true,
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException('ไม่พบคอร์สที่ต้องการสั่งซื้อ');
+    }
+
+    const isPurchasable =
+      course.isPublished ||
+      course.status === Status.ACTIVE ||
+      course.workflowStatus === CourseWorkflowStatus.APPROVED ||
+      course.workflowStatus === CourseWorkflowStatus.PUBLISHED;
+
+    if (!isPurchasable) {
+      throw new BadRequestException('คอร์สนี้ยังไม่พร้อมสำหรับการสั่งซื้อ');
+    }
+
+    return course;
+  }
+
   async getCurrentCart(userId: string) {
     const cart = await this.prisma.cart.findFirst({
       where: { userId },
@@ -25,7 +58,7 @@ export class CartService {
     });
     if (!cart) {
       throw new BadRequestException({
-        message: 'Cart not found',
+        message: 'ยังไม่มีรายการในตะกร้า',
         code: 'CART_NOT_FOUND',
       });
     }
@@ -261,6 +294,22 @@ export class CartService {
   }
 
   async addItemToCart(userId: string, courseId: string) {
+    const course = await this.getPurchasableCourse(courseId);
+    const existingEnrollment = await this.prisma.enrolledCourse.findUnique({
+      where: {
+        enrollmentIdentifier: {
+          userId,
+          courseId,
+        },
+      },
+    });
+
+    if (existingEnrollment) {
+      throw new BadRequestException(
+        `คุณมีสิทธิ์เข้าถึงคอร์ส "${course.courseName}" อยู่แล้ว`,
+      );
+    }
+
     const cart = await this.prisma.cart.upsert({
       where: { userId },
       update: {},
@@ -268,22 +317,28 @@ export class CartService {
     });
 
     try {
-      await this.prisma.cartItem.upsert({
+      const existingCartItem = await this.prisma.cartItem.findUnique({
         where: {
           cartItemIdentifier: {
             cartId: cart.id,
             courseId,
           },
         },
-        update: {},
-        create: {
+      });
+
+      if (existingCartItem) {
+        return { message: 'คอร์สนี้อยู่ในตะกร้าแล้ว' };
+      }
+
+      await this.prisma.cartItem.create({
+        data: {
           cartId: cart.id,
           courseId,
         },
       });
 
       await this.updateCart(cart.id);
-      return { message: 'Added course to cart' };
+      return { message: 'เพิ่มคอร์สลงตะกร้าเรียบร้อยแล้ว' };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         throw new BadRequestException({
@@ -302,7 +357,7 @@ export class CartService {
 
     if (!cart) {
       throw new NotFoundException({
-        message: 'Cart is empty',
+        message: 'ตะกร้าสินค้าว่างอยู่แล้ว',
         code: 'CART_EMPTY',
       });
     }
@@ -318,7 +373,7 @@ export class CartService {
       });
 
       await this.updateCart(cart.id);
-      return { message: 'Removed course from cart' };
+      return { message: 'ลบคอร์สออกจากตะกร้าแล้ว' };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         throw new BadRequestException({
@@ -386,7 +441,7 @@ export class CartService {
     });
 
     if (!cart) {
-      throw new NotFoundException('Cart not found');
+      throw new NotFoundException('ยังไม่มีโปรโมชันที่ต้องลบออกจากตะกร้า');
     }
 
     const updatedCart = await this.prisma.cart.update({

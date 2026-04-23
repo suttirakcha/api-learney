@@ -68,6 +68,7 @@ export class PaymentService {
             course: {
               select: {
                 id: true,
+                courseName: true,
                 price: true,
               },
             },
@@ -77,18 +78,46 @@ export class PaymentService {
     });
 
     if (!cart) {
-      throw new NotFoundException('Cart not found.');
+      throw new NotFoundException('ไม่พบตะกร้าสินค้า');
     }
 
     if (!cart.cartItems.length) {
-      throw new BadRequestException('Cart is empty.');
+      throw new BadRequestException('ยังไม่มีคอร์สในตะกร้า');
     }
 
     const courseIds = cart.cartItems.map((item) => item.courseId).sort();
     const amount = this.getCartAmount(cart.total, cart.cartItems);
 
     if (amount <= 0) {
-      throw new BadRequestException('Cart total must be greater than zero.');
+      throw new BadRequestException('ยอดชำระต้องมากกว่า 0 บาท');
+    }
+
+    const existingEnrollments = await this.prisma.enrolledCourse.findMany({
+      where: {
+        userId,
+        courseId: {
+          in: courseIds,
+        },
+      },
+      include: {
+        course: {
+          select: {
+            courseName: true,
+          },
+        },
+      },
+    });
+
+    if (existingEnrollments.length) {
+      const courseNames = existingEnrollments.map(
+        (enrollment) => enrollment.course.courseName,
+      );
+
+      throw new BadRequestException(
+        courseNames.length === 1
+          ? `คุณมีสิทธิ์เข้าถึงคอร์ส "${courseNames[0]}" อยู่แล้ว`
+          : `มีคอร์สที่คุณมีสิทธิ์อยู่แล้วในตะกร้า: ${courseNames.join(', ')}`,
+      );
     }
 
     return {
@@ -178,7 +207,7 @@ export class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundException('Payment not found.');
+      throw new NotFoundException('ไม่พบรายการชำระเงิน');
     }
 
     const parsedEvidence = parsePaymentEvidence(payment.evidence);
@@ -225,7 +254,7 @@ export class PaymentService {
     });
 
     if (!payment) {
-      throw new NotFoundException('Payment not found.');
+      throw new NotFoundException('ไม่พบรายการชำระเงิน');
     }
 
     const parsedEvidence = parsePaymentEvidence(payment.evidence);
@@ -233,7 +262,7 @@ export class PaymentService {
 
     if (!latestSession || latestSession.status !== 'PENDING') {
       throw new BadRequestException(
-        'No pending payment session. Please create a new QR code.',
+        'ไม่พบรายการชำระเงินที่รอดำเนินการ กรุณาสร้าง QR ใหม่อีกครั้ง',
       );
     }
 
@@ -251,7 +280,7 @@ export class PaymentService {
         [...latestSession.courseIds].sort().join(',')
     ) {
       throw new BadRequestException(
-        'Cart changed. Please create a new QR code before confirming payment.',
+        'รายการในตะกร้ามีการเปลี่ยนแปลง กรุณาสร้าง QR ใหม่ก่อนยืนยันการชำระเงิน',
       );
     }
 
@@ -275,6 +304,13 @@ export class PaymentService {
       const existingCourseIds = new Set(
         existingEnrollments.map((enrollment) => enrollment.courseId),
       );
+
+      if (existingCourseIds.size > 0) {
+        throw new BadRequestException(
+          'มีคอร์สในรายการนี้ถูกซื้อไปแล้ว กรุณาสร้าง QR ใหม่และตรวจสอบตะกร้าอีกครั้ง',
+        );
+      }
+
       const missingEnrollments = latestCourseIds
         .filter((courseId) => !existingCourseIds.has(courseId))
         .map((courseId) => ({
